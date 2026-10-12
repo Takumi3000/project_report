@@ -2,8 +2,8 @@
 <html lang="ru" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Отчеты по проектам</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>T.REPORT</title>
     
     <!-- Tailwind CSS CDN & Lucide Icons -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -33,6 +33,10 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='120' fill='%23090d16'/><rect x='128' y='128' width='256' height='256' rx='40' fill='none' stroke='%233b82f6' stroke-width='32'/><path d='M180 256l50 50 102-102' fill='none' stroke='%233b82f6' stroke-width='32' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 
     <style>
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+        }
         body {
             font-family: 'Inter', sans-serif;
             -webkit-tap-highlight-color: transparent;
@@ -64,7 +68,7 @@
             }
         }
 
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.2); border-radius: 99px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(156, 163, 175, 0.4); }
@@ -75,55 +79,54 @@
         }
     </style>
 </head>
-<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col pb-16 antialiased selection:bg-blue-500/20">
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col pb-24 antialiased selection:bg-blue-500/20">
 
-    <!-- Top Header -->
-    <header class="border-b border-zinc-800/80 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-30 no-print">
-        <div class="max-w-7xl mx-auto px-4 sm:px-8 py-3.5 flex items-center justify-between gap-2">
+    <!-- Top Header (Компактный для мобилок) -->
+    <header class="border-b border-zinc-800/80 bg-zinc-900/80 backdrop-blur-md sticky top-0 z-30 no-print">
+        <div class="max-w-7xl mx-auto px-3 sm:px-8 py-3 flex items-center justify-between gap-2">
             
-            <div class="flex items-center gap-3">
-                <div class="p-2 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20">
-                    <i data-lucide="clapperboard" class="w-5 h-5"></i>
+            <div class="flex items-center gap-2 shrink-0">
+                <div class="p-1.5 sm:p-2 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                    <i data-lucide="clapperboard" class="w-4 h-4 sm:w-5 sm:h-5"></i>
                 </div>
-                <h1 class="text-lg font-semibold tracking-tight">T.REPORT</h1>
-                <span id="syncBadge" class="hidden text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    Облако
-                </span>
+                <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">T.REPORT</h1>
             </div>
 
-            <div class="flex items-center gap-2">
-                <!-- Sync Trigger -->
-                <button id="openSyncModalBtn" class="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl border border-zinc-800 hover:bg-zinc-800 transition-all text-zinc-300 whitespace-nowrap">
-                    <i data-lucide="cloud" class="w-4 h-4 text-zinc-400"></i>
-                    <span id="syncBtnLabel" class="whitespace-nowrap">Синхронизация</span>
+            <!-- Правые элементы (Совмещенные кнопки) -->
+            <div class="flex items-center gap-2 shrink-0">
+                <!-- Совмещенная кнопка Облако / Синхронизация -->
+                <button id="openSyncModalBtn" class="flex items-center gap-1.5 text-xs font-medium px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl border border-zinc-800 hover:bg-zinc-800 transition-all text-zinc-300 whitespace-nowrap">
+                    <span id="syncBtnContent" class="flex items-center gap-1.5">
+                        <i data-lucide="cloud" class="w-3.5 h-3.5 text-zinc-400"></i>
+                        <span>Синхронизация</span>
+                    </span>
                 </button>
 
-                <!-- Export PDF -->
-                <button onclick="window.print()" class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-colors shadow-lg shadow-blue-500/20">
-                    <i data-lucide="printer" class="w-4 h-4"></i>
-                    <span>Экспорт в PDF</span>
+                <!-- Export PDF (На мобилках только иконка) -->
+                <button onclick="window.print()" class="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-medium rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-colors shadow-lg shadow-blue-500/20">
+                    <i data-lucide="printer" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+                    <span class="hidden sm:inline">Экспорт в PDF</span>
                 </button>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-7xl w-full mx-auto px-4 sm:px-8 py-8 flex-grow">
+    <main class="max-w-7xl w-full mx-auto px-3 sm:px-8 py-6 sm:py-8 flex-grow">
         
         <!-- Project Header Info -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-5 border-b border-zinc-800/60">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8 pb-4 sm:pb-5 border-b border-zinc-800/60">
             <div>
                 <div class="flex items-center gap-3">
-                    <h2 id="currentProjectTitle" class="text-2xl sm:text-3xl font-bold tracking-tight text-white">Загрузка...</h2>
+                    <h2 id="currentProjectTitle" class="text-xl sm:text-3xl font-bold tracking-tight text-white">Загрузка...</h2>
                     <button id="deleteProjectBtn" class="no-print p-1.5 text-zinc-500 hover:text-red-400 transition-colors" title="Удалить данный лист">
                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </button>
                 </div>
-                <p class="text-sm text-zinc-400 mt-1" id="projectStats">Всего видео: 0</p>
+                <p class="text-xs sm:text-sm text-zinc-400 mt-1" id="projectStats">Всего видео: 0</p>
             </div>
 
-            <button id="addMonthBtn" class="no-print self-start sm:self-auto flex items-center gap-2 px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs sm:text-sm font-medium text-zinc-200 transition-colors">
+            <button id="addMonthBtn" class="no-print self-start sm:self-auto flex items-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs sm:text-sm font-medium text-zinc-200 transition-colors">
                 <i data-lucide="calendar-plus" class="w-4 h-4 text-blue-400"></i>
                 <span>Добавить месяц</span>
             </button>
@@ -136,16 +139,16 @@
 
     </main>
 
-    <!-- Bottom Sheets / Project Navigation -->
-    <footer class="border-t border-zinc-800 bg-zinc-900/90 backdrop-blur-md fixed bottom-0 left-0 right-0 z-40 no-print">
-        <div class="max-w-7xl mx-auto px-4 sm:px-8 flex items-center justify-between">
+    <!-- Bottom Fixed Sheets Panel (Жестко зафиксирована снизу на мобилках) -->
+    <footer class="border-t border-zinc-800/90 bg-zinc-900/95 backdrop-blur-md fixed bottom-0 left-0 right-0 z-40 no-print">
+        <div class="max-w-7xl mx-auto px-3 sm:px-8 flex items-center justify-between">
             
-            <!-- Tabs list (Excel style) -->
-            <nav id="projectsTabs" class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-2.5">
+            <!-- Tabs list -->
+            <nav id="projectsTabs" class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-2.5 max-w-[calc(100%-75px)] sm:max-w-none">
                 <!-- Rendered dynamically -->
             </nav>
 
-            <button id="addProjectBtn" class="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition-colors shrink-0 ml-3">
+            <button id="addProjectBtn" class="flex items-center gap-1 px-3 py-1.5 sm:px-3.5 sm:py-1.5 text-xs font-medium rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition-colors shrink-0 ml-2">
                 <i data-lucide="plus" class="w-3.5 h-3.5"></i>
                 <span>Лист</span>
             </button>
@@ -153,36 +156,19 @@
     </footer>
 
     <!-- Sync Modal -->
-    <div id="syncModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200 no-print">
+    <div id="syncModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200 no-print">
         <div class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-2xl p-6 shadow-2xl relative space-y-5">
             
             <div class="flex justify-between items-center">
-                <h3 class="text-base font-semibold text-zinc-100">Синхронизация через Облако</h3>
+                <h3 class="text-base font-semibold text-zinc-100">Облачная Синхронизация</h3>
                 <button id="closeSyncModalBtn" class="text-zinc-400 hover:text-zinc-200">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
 
-            <div class="space-y-3">
-                <p class="text-xs text-zinc-400 leading-relaxed">
-                    Введите одинаковый <strong>Синхро-код</strong> на всех ваших устройствах (ноутбук, телефон), чтобы отчеты обновлялись в реальном времени!
-                </p>
-                <div class="flex gap-2">
-                    <input 
-                        type="text" 
-                        id="syncCodeInput" 
-                        placeholder="Код (например: айдай)"
-                        class="flex-grow bg-zinc-950 border border-zinc-800 text-xs sm:text-sm rounded-xl px-3.5 py-2.5 outline-none focus:border-blue-500 font-mono text-zinc-100"
-                    >
-                    <button id="applySyncCodeBtn" class="px-4 py-2.5 bg-blue-600 text-white hover:bg-blue-500 transition-opacity rounded-xl text-xs font-medium">
-                        Подключить
-                    </button>
-                </div>
-            </div>
-
-            <div class="pt-3 border-t border-zinc-800 flex justify-between items-center text-xs text-zinc-400">
-                <span>Статус подключения:</span>
-                <span id="modalStatusText" class="font-medium text-emerald-400">Локальный режим</span>
+            <!-- Динамический блок модалки -->
+            <div id="syncModalBody" class="space-y-4">
+                <!-- Заполняется из JS -->
             </div>
 
         </div>
@@ -210,7 +196,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // State (Чистый старт по умолчанию)
+        // State
         let projects = JSON.parse(localStorage.getItem('media_reports_data')) || [];
         let activeProjectId = localStorage.getItem('media_active_proj') || '';
         let syncCode = localStorage.getItem('minimal_sync_code_reports') || '';
@@ -231,11 +217,8 @@
         const syncModal = document.getElementById('syncModal');
         const openSyncModalBtn = document.getElementById('openSyncModalBtn');
         const closeSyncModalBtn = document.getElementById('closeSyncModalBtn');
-        const syncBtnLabel = document.getElementById('syncBtnLabel');
-        const syncBadge = document.getElementById('syncBadge');
-        const syncCodeInput = document.getElementById('syncCodeInput');
-        const applySyncCodeBtn = document.getElementById('applySyncCodeBtn');
-        const modalStatusText = document.getElementById('modalStatusText');
+        const syncBtnContent = document.getElementById('syncBtnContent');
+        const syncModalBody = document.getElementById('syncModalBody');
 
         // Save & Firestore Sync
         async function saveData() {
@@ -248,8 +231,6 @@
                     await setDoc(docRef, { projects: projects, updatedAt: Date.now() }, { merge: true });
                 } catch (err) {
                     console.error("Ошибка сохранения в Firestore:", err);
-                    modalStatusText.textContent = "Ошибка сети";
-                    modalStatusText.className = "font-medium text-amber-500";
                 }
             }
             render();
@@ -257,10 +238,7 @@
 
         function subscribeToCloud(code) {
             if (!code) {
-                syncBadge.classList.add('hidden');
-                syncBtnLabel.textContent = 'Синхронизация';
-                modalStatusText.textContent = 'Локальный режим';
-                modalStatusText.className = 'font-medium text-zinc-400';
+                updateSyncButtonUI(null);
                 return;
             }
 
@@ -275,15 +253,86 @@
                 } else {
                     saveData();
                 }
-                syncBadge.classList.remove('hidden');
-                syncBtnLabel.textContent = `Код: ${code}`;
-                modalStatusText.textContent = `Синхронизировано (${code})`;
-                modalStatusText.className = "font-medium text-emerald-400";
+                updateSyncButtonUI(code);
             }, (error) => {
                 console.error("Ошибка подписки Firestore:", error);
-                modalStatusText.textContent = "Ошибка доступа к БД";
-                modalStatusText.className = "font-medium text-red-500";
+                updateSyncButtonUI(null, true);
             });
+        }
+
+        function updateSyncButtonUI(code, isError = false) {
+            if (isError) {
+                syncBtnContent.innerHTML = `
+                    <span class="w-2 h-2 rounded-full bg-red-500"></span>
+                    <span class="text-red-400 font-medium">Ошибка БД</span>
+                `;
+            } else if (code) {
+                syncBtnContent.innerHTML = `
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-emerald-400 font-mono font-medium">${escapeHtml(code)}</span>
+                `;
+            } else {
+                syncBtnContent.innerHTML = `
+                    <i data-lucide="cloud" class="w-3.5 h-3.5 text-zinc-400"></i>
+                    <span>Синхронизация</span>
+                `;
+            }
+            lucide.createIcons();
+        }
+
+        function renderSyncModal() {
+            if (syncCode) {
+                syncModalBody.innerHTML = `
+                    <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span class="text-xs text-zinc-300">Синхронизировано: <strong class="font-mono text-emerald-400">${escapeHtml(syncCode)}</strong></span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-zinc-400 leading-relaxed">
+                        Все изменения на этом устройстве сразу передаются в облако.
+                    </p>
+                    <div class="pt-2 flex flex-col gap-2">
+                        <button id="disconnectSyncBtn" class="w-full py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-xs font-medium transition-colors">
+                            Отключить / Выйти
+                        </button>
+                    </div>
+                `;
+                document.getElementById('disconnectSyncBtn').addEventListener('click', () => {
+                    syncCode = '';
+                    localStorage.removeItem('minimal_sync_code_reports');
+                    if (unsubscribeFirestore) unsubscribeFirestore();
+                    updateSyncButtonUI(null);
+                    closeModal();
+                });
+            } else {
+                syncModalBody.innerHTML = `
+                    <p class="text-xs text-zinc-400 leading-relaxed">
+                        Введите одинаковый <strong>Синхро-код</strong> на всех ваших устройствах (ноутбук, телефон), чтобы отчеты обновлялись в реальном времени!
+                    </p>
+                    <div class="flex gap-2">
+                        <input 
+                            type="text" 
+                            id="syncCodeInput" 
+                            placeholder="Код (например: айдай)"
+                            class="flex-grow bg-zinc-950 border border-zinc-800 text-xs sm:text-sm rounded-xl px-3.5 py-2.5 outline-none focus:border-blue-500 font-mono text-zinc-100"
+                        >
+                        <button id="applySyncCodeBtn" class="px-4 py-2.5 bg-blue-600 text-white hover:bg-blue-500 transition-opacity rounded-xl text-xs font-medium shrink-0">
+                            Подключить
+                        </button>
+                    </div>
+                `;
+                document.getElementById('applySyncCodeBtn').addEventListener('click', () => {
+                    const input = document.getElementById('syncCodeInput');
+                    const code = input.value.trim();
+                    if (code) {
+                        syncCode = code;
+                        localStorage.setItem('minimal_sync_code_reports', code);
+                        subscribeToCloud(code);
+                        closeModal();
+                    }
+                });
+            }
         }
 
         function getActiveProject() {
@@ -309,14 +358,13 @@
 
         // Render Engine
         function render() {
-            // ЭКРАН ПРИ ПУСТОМ СОСТОЯНИИ (БЕЗ ПРОЕКТОВ)
             if (!projects || projects.length === 0) {
                 currentProjectTitle.textContent = "Нет проектов";
                 projectStats.textContent = "Создайте новый проект или введите Синхро-код";
                 monthsContainer.innerHTML = `
-                    <div class="text-center py-20 border border-dashed border-zinc-800 rounded-2xl space-y-4">
+                    <div class="text-center py-16 border border-dashed border-zinc-800 rounded-2xl space-y-4">
                         <p class="text-zinc-400 text-sm">У вас пока нет активных листов с отчетами.</p>
-                        <div class="flex items-center justify-center gap-3">
+                        <div class="flex items-center justify-center gap-2">
                             <button onclick="document.getElementById('addProjectBtn').click()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-xl transition-all">
                                 + Создать проект
                             </button>
@@ -326,7 +374,7 @@
                         </div>
                     </div>
                 `;
-                projectsTabs.innerHTML = `<span class="text-xs text-zinc-500 italic px-2">Нет сохраненных листов</span>`;
+                projectsTabs.innerHTML = `<span class="text-xs text-zinc-500 italic px-2">Нет листов</span>`;
                 deleteProjectBtn.classList.add('hidden');
                 addMonthBtn.classList.add('hidden');
                 lucide.createIcons();
@@ -349,9 +397,9 @@
             projectsTabs.innerHTML = projects.map(p => `
                 <button 
                     onclick="window.switchProject('${p.id}')"
-                    class="px-4 py-2 text-xs font-medium rounded-lg transition-all whitespace-nowrap flex items-center gap-2 ${String(p.id) === String(activeProjectId) ? 'bg-blue-600 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'}"
+                    class="px-3 py-1.5 sm:px-4 sm:py-2 text-xs font-medium rounded-lg transition-all whitespace-nowrap flex items-center gap-1.5 ${String(p.id) === String(activeProjectId) ? 'bg-blue-600 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'}"
                 >
-                    <i data-lucide="file-text" class="w-4 h-4 opacity-70"></i>
+                    <i data-lucide="file-text" class="w-3.5 h-3.5 opacity-70"></i>
                     <span>${escapeHtml(p.name)}</span>
                 </button>
             `).join('');
@@ -370,7 +418,7 @@
             // 3. Months Accordion
             if (activeProj.months.length === 0) {
                 monthsContainer.innerHTML = `
-                    <div class="text-center py-16 border border-dashed border-zinc-800 rounded-2xl">
+                    <div class="text-center py-12 border border-dashed border-zinc-800 rounded-2xl">
                         <p class="text-sm text-zinc-500">Нет добавленных месяцев. Нажмите «Добавить месяц» выше.</p>
                     </div>
                 `;
@@ -385,17 +433,17 @@
             return `
                 <div class="print-card bg-zinc-900/60 border border-zinc-800/80 rounded-2xl overflow-hidden transition-all shadow-sm">
                     <!-- Month Header -->
-                    <div class="px-6 py-4 bg-zinc-900/90 flex items-center justify-between border-b border-zinc-800/60 select-none">
-                        <div class="flex items-center gap-3 cursor-pointer" onclick="window.toggleMonth('${month.id}')">
-                            <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-400 transition-transform ${month.isOpen ? '' : '-rotate-90'}"></i>
-                            <h3 class="font-semibold text-base text-zinc-100">${escapeHtml(month.title)}</h3>
-                            <span class="text-xs px-2.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-mono">${month.items.length}</span>
+                    <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-zinc-900/90 flex items-center justify-between border-b border-zinc-800/60 select-none gap-2">
+                        <div class="flex items-center gap-2.5 cursor-pointer min-w-0" onclick="window.toggleMonth('${month.id}')">
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-400 shrink-0 transition-transform ${month.isOpen ? '' : '-rotate-90'}"></i>
+                            <h3 class="font-semibold text-sm sm:text-base text-zinc-100 truncate">${escapeHtml(month.title)}</h3>
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-mono shrink-0">${month.items.length}</span>
                         </div>
 
-                        <div class="flex items-center gap-2 no-print">
-                            <button onclick="window.addVideo('${month.id}')" class="px-3.5 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition-colors flex items-center gap-1.5">
+                        <div class="flex items-center gap-1.5 shrink-0 no-print">
+                            <button onclick="window.addVideo('${month.id}')" class="px-2.5 py-1.5 sm:px-3.5 sm:py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition-colors flex items-center gap-1">
                                 <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                                <span>Добавить ролик</span>
+                                <span class="hidden sm:inline">Добавить ролик</span>
                             </button>
                             <button onclick="window.deleteMonth('${month.id}')" class="p-1.5 text-zinc-500 hover:text-red-400 transition-colors rounded-lg">
                                 <i data-lucide="trash" class="w-3.5 h-3.5"></i>
@@ -404,22 +452,22 @@
                     </div>
 
                     <!-- Month Items Table -->
-                    <div class="${month.isOpen ? 'block' : 'hidden'} print-accordion-content p-3 sm:p-5">
+                    <div class="${month.isOpen ? 'block' : 'hidden'} print-accordion-content p-2 sm:p-5">
                         ${month.items.length === 0 ? `
-                            <div class="text-center py-8 text-xs text-zinc-500">
+                            <div class="text-center py-6 text-xs text-zinc-500">
                                 В этом месяце пока нет роликов.
                             </div>
                         ` : `
                             <div class="overflow-x-auto">
                                 <table class="w-full text-left text-sm border-collapse">
                                     <thead>
-                                        <tr class="text-zinc-500 border-b border-zinc-800/60 uppercase tracking-wider text-xs">
-                                            <th class="py-2.5 px-3 w-10">№</th>
-                                            <th class="py-2.5 px-3 w-24">Превью</th>
-                                            <th class="py-2.5 px-3">Название / Тэг</th>
-                                            <th class="py-2.5 px-3 w-52">Статус / Дата</th>
-                                            <th class="py-2.5 px-3 w-36 no-print">Ссылка</th>
-                                            <th class="py-2.5 px-3 w-12 text-right no-print"></th>
+                                        <tr class="text-zinc-500 border-b border-zinc-800/60 uppercase tracking-wider text-[11px]">
+                                            <th class="py-2.5 px-2.5 w-8">№</th>
+                                            <th class="py-2.5 px-2.5 w-20">Превью</th>
+                                            <th class="py-2.5 px-2.5">Название / Тэг</th>
+                                            <th class="py-2.5 px-2.5 w-44 sm:w-52">Статус / Дата</th>
+                                            <th class="py-2.5 px-2.5 w-28 sm:w-36 no-print">Ссылка</th>
+                                            <th class="py-2.5 px-2.5 w-10 text-right no-print"></th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-zinc-800/40">
@@ -439,56 +487,56 @@
             return `
                 <tr class="group hover:bg-zinc-800/30 transition-colors">
                     <!-- Index -->
-                    <td class="py-3.5 px-3 text-zinc-500 font-mono font-medium text-xs sm:text-sm">${index}</td>
+                    <td class="py-3 px-2.5 text-zinc-500 font-mono font-medium text-xs sm:text-sm">${index}</td>
 
-                    <!-- Drag & Drop Preview Image -->
-                    <td class="py-3.5 px-3">
+                    <!-- Drag & Drop Preview Image (3:4) -->
+                    <td class="py-3 px-2.5">
                         <div 
                             tabindex="0"
                             onclick="window.selectTargetForPaste('${monthId}', '${item.id}')"
                             ondragover="window.handleDragOver(event)"
                             ondragleave="window.handleDragLeave(event)"
                             ondrop="window.handleDrop(event, '${monthId}', '${item.id}')"
-                            class="preview-dropzone w-16 aspect-[3/4] rounded-xl border border-zinc-800 bg-zinc-950 flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group/img transition-all hover:border-blue-500/60 outline-none focus:ring-2 focus:ring-blue-500/40 shrink-0"
+                            class="preview-dropzone w-14 sm:w-16 aspect-[3/4] rounded-xl border border-zinc-800 bg-zinc-950 flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group/img transition-all hover:border-blue-500/60 outline-none focus:ring-2 focus:ring-blue-500/40 shrink-0"
                             title="Перетащите фото сюда, кликните или вставьте (Ctrl+V)"
                         >
                             ${item.image ? `
                                 <img src="${item.image}" class="w-full h-full object-cover">
-                                <div class="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 flex flex-col items-center justify-center gap-1 transition-opacity no-print text-[10px] text-zinc-200">
-                                    <i data-lucide="upload" class="w-4 h-4"></i>
+                                <div class="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 flex flex-col items-center justify-center gap-1 transition-opacity no-print text-[9px] text-zinc-200">
+                                    <i data-lucide="upload" class="w-3.5 h-3.5"></i>
                                     <span>Заменить</span>
                                 </div>
                             ` : `
-                                <i data-lucide="image-plus" class="w-5 h-5 text-zinc-600 group-hover/img:text-blue-400 no-print"></i>
-                                <span class="text-[9px] text-zinc-600 mt-1 no-print">3:4</span>
+                                <i data-lucide="image-plus" class="w-4 h-4 text-zinc-600 group-hover/img:text-blue-400 no-print"></i>
+                                <span class="text-[8px] text-zinc-600 mt-0.5 no-print">3:4</span>
                             `}
                         </div>
                     </td>
 
                     <!-- Title & Tag -->
-                    <td class="py-3.5 px-3">
+                    <td class="py-3 px-2.5">
                         <input 
                             type="text" 
                             value="${escapeHtml(item.title)}" 
                             placeholder="Название ролика..." 
                             onchange="window.updateItem('${monthId}', '${item.id}', 'title', this.value)"
-                            class="w-full bg-transparent font-medium text-sm sm:text-base text-zinc-100 outline-none focus:border-b focus:border-blue-500 py-0.5"
+                            class="w-full bg-transparent font-medium text-xs sm:text-base text-zinc-100 outline-none focus:border-b focus:border-blue-500 py-0.5"
                         >
                         <input 
                             type="text" 
                             value="${escapeHtml(item.tag || '')}" 
                             placeholder="#тэг" 
                             onchange="window.updateItem('${monthId}', '${item.id}', 'tag', this.value)"
-                            class="w-full bg-transparent text-xs text-blue-400/90 outline-none mt-1"
+                            class="w-full bg-transparent text-[11px] text-blue-400/90 outline-none mt-0.5"
                         >
                     </td>
 
                     <!-- Status + Conditional Date -->
-                    <td class="py-3.5 px-3">
-                        <div class="flex flex-col gap-2">
+                    <td class="py-3 px-2.5">
+                        <div class="flex flex-col gap-1.5">
                             <select 
                                 onchange="window.updateItem('${monthId}', '${item.id}', 'status', this.value)"
-                                class="bg-zinc-950 border border-zinc-800 text-xs sm:text-sm rounded-xl px-3 py-1.5 text-zinc-200 outline-none focus:border-zinc-700 cursor-pointer no-print w-fit"
+                                class="bg-zinc-950 border border-zinc-800 text-xs rounded-xl px-2.5 py-1.5 text-zinc-200 outline-none focus:border-zinc-700 cursor-pointer no-print w-fit"
                             >
                                 <option value="editing" ${item.status === 'editing' ? 'selected' : ''}>🔵 Монтаж</option>
                                 <option value="approved" ${item.status === 'approved' ? 'selected' : ''}>🟣 Утвержден</option>
@@ -502,13 +550,13 @@
 
                             <!-- Date (Shows only if Published) -->
                             ${isPublished ? `
-                                <div class="flex items-center gap-1.5 text-xs text-zinc-400 mt-0.5">
-                                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-emerald-400/80 no-print"></i>
+                                <div class="flex items-center gap-1 text-[11px] text-zinc-400 mt-0.5">
+                                    <i data-lucide="calendar" class="w-3 h-3 text-emerald-400/80 no-print shrink-0"></i>
                                     <input 
                                         type="date" 
                                         value="${item.date || ''}" 
                                         onchange="window.updateItem('${monthId}', '${item.id}', 'date', this.value)"
-                                        class="bg-transparent text-xs text-emerald-400 outline-none focus:underline"
+                                        class="bg-transparent text-[11px] text-emerald-400 outline-none focus:underline"
                                     >
                                 </div>
                             ` : ''}
@@ -516,10 +564,10 @@
                     </td>
 
                     <!-- Link -->
-                    <td class="py-3.5 px-3 no-print">
+                    <td class="py-3 px-2.5 no-print">
                         ${item.link ? `
-                            <a href="${escapeHtml(item.link)}" target="_blank" class="inline-flex items-center gap-1 text-blue-400 hover:underline text-xs mb-1">
-                                <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Посмотреть
+                            <a href="${escapeHtml(item.link)}" target="_blank" class="inline-flex items-center gap-1 text-blue-400 hover:underline text-[11px] mb-0.5">
+                                <i data-lucide="external-link" class="w-3 h-3"></i> Посмотреть
                             </a>
                         ` : ''}
                         <input 
@@ -527,15 +575,15 @@
                             placeholder="Ссылка..." 
                             value="${escapeHtml(item.link || '')}"
                             onchange="window.updateItem('${monthId}', '${item.id}', 'link', this.value)"
-                            class="w-full bg-transparent text-xs text-zinc-500 outline-none focus:text-zinc-300"
+                            class="w-full bg-transparent text-[11px] text-zinc-500 outline-none focus:text-zinc-300"
                         >
                     </td>
 
                     <!-- Delete Action -->
-                    <td class="py-3.5 px-3 text-right no-print">
+                    <td class="py-3 px-2.5 text-right no-print">
                         <button 
                             onclick="window.deleteVideo('${monthId}', '${item.id}')"
-                            class="opacity-0 group-hover:opacity-100 p-1.5 text-zinc-600 hover:text-red-400 transition-all rounded-lg"
+                            class="opacity-0 group-hover:opacity-100 p-1 text-zinc-600 hover:text-red-400 transition-all rounded-lg"
                             title="Удалить"
                         >
                             <i data-lucide="x" class="w-4 h-4"></i>
@@ -725,28 +773,22 @@
 
         // Modal Handlers
         openSyncModalBtn.addEventListener('click', () => {
-            syncCodeInput.value = syncCode;
+            renderSyncModal();
             syncModal.classList.remove('opacity-0', 'pointer-events-none');
         });
 
-        closeSyncModalBtn.addEventListener('click', () => {
-            syncModal.classList.add('opacity-0', 'pointer-events-none');
-        });
+        closeSyncModalBtn.addEventListener('click', closeModal);
 
-        applySyncCodeBtn.addEventListener('click', () => {
-            const code = syncCodeInput.value.trim();
-            if (code) {
-                syncCode = code;
-                localStorage.setItem('minimal_sync_code_reports', code);
-                subscribeToCloud(code);
-                syncModal.classList.add('opacity-0', 'pointer-events-none');
-            }
-        });
+        function closeModal() {
+            syncModal.classList.add('opacity-0', 'pointer-events-none');
+        }
 
         // Initialize
         render();
         if (syncCode) {
             subscribeToCloud(syncCode);
+        } else {
+            updateSyncButtonUI(null);
         }
     </script>
 
