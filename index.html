@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Отчеты по проектам</title>
     
-    <!-- Tailwind CSS & Lucide Icons -->
+    <!-- Tailwind CSS CDN & Lucide Icons -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -24,18 +24,44 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+    <!-- PWA Настройки -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#090d16">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%23090d16'/><rect x='128' y='128' width='256' height='256' rx='40' fill='none' stroke='%233b82f6' stroke-width='32'/><path d='M180 256l50 50 102-102' fill='none' stroke='%233b82f6' stroke-width='32' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+
     <style>
         body {
             font-family: 'Inter', sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
 
+        /* Печатные стили с сохранением ТЁМНОЙ ТЕМЫ */
         @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
             .no-print { display: none !important; }
-            body { background: white !important; color: black !important; padding-bottom: 0 !important; }
-            .print-card { border: 1px solid #e4e4e7 !important; background: white !important; box-shadow: none !important; }
+            body { 
+                background-color: #090d16 !important; 
+                color: #f4f4f5 !important; 
+                padding-bottom: 0 !important; 
+            }
+            .print-card { 
+                border: 1px solid #27272a !important; 
+                background-color: #18181b !important; 
+                box-shadow: none !important; 
+            }
             .print-accordion-content { display: block !important; }
-            input, select, textarea { border: none !important; background: transparent !important; appearance: none !important; }
+            input, select, textarea { 
+                border: none !important; 
+                background: transparent !important; 
+                color: #f4f4f5 !important;
+                appearance: none !important; 
+            }
         }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -53,39 +79,51 @@
 
     <!-- Top Header -->
     <header class="border-b border-zinc-800/80 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-30 no-print">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-            <div class="flex items-center gap-2">
+        <div class="max-w-7xl mx-auto px-4 sm:px-8 py-3.5 flex items-center justify-between gap-2">
+            
+            <div class="flex items-center gap-3">
                 <div class="p-2 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20">
                     <i data-lucide="clapperboard" class="w-5 h-5"></i>
                 </div>
-                <h1 class="text-base font-semibold tracking-tight">Медиа Отчеты</h1>
+                <h1 class="text-lg font-semibold tracking-tight">Медиа Отчеты</h1>
+                <span id="syncBadge" class="hidden text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Облако
+                </span>
             </div>
 
             <div class="flex items-center gap-2">
-                <button onclick="window.print()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors shadow-lg shadow-blue-500/20">
-                    <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                <!-- Sync Trigger -->
+                <button id="openSyncModalBtn" class="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl border border-zinc-800 hover:bg-zinc-800 transition-all text-zinc-300 whitespace-nowrap">
+                    <i data-lucide="cloud" class="w-4 h-4 text-zinc-400"></i>
+                    <span id="syncBtnLabel" class="whitespace-nowrap">Синхронизация</span>
+                </button>
+
+                <!-- Export PDF -->
+                <button onclick="window.print()" class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-colors shadow-lg shadow-blue-500/20">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
                     <span>Экспорт в PDF</span>
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 flex-grow">
+    <!-- Main Content (Увеличен контейнер до max-w-7xl) -->
+    <main class="max-w-7xl w-full mx-auto px-4 sm:px-8 py-8 flex-grow">
         
         <!-- Project Header Info -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-zinc-800/60">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-5 border-b border-zinc-800/60">
             <div>
                 <div class="flex items-center gap-3">
-                    <h2 id="currentProjectTitle" class="text-2xl font-bold tracking-tight text-white">Загрузка...</h2>
-                    <button id="deleteProjectBtn" class="no-print p-1 text-zinc-500 hover:text-red-400 transition-colors" title="Удалить проект">
+                    <h2 id="currentProjectTitle" class="text-2xl sm:text-3xl font-bold tracking-tight text-white">Загрузка...</h2>
+                    <button id="deleteProjectBtn" class="no-print p-1.5 text-zinc-500 hover:text-red-400 transition-colors" title="Удалить данный лист">
                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </button>
                 </div>
-                <p class="text-xs text-zinc-400 mt-1" id="projectStats">Всего видео: 0</p>
+                <p class="text-sm text-zinc-400 mt-1" id="projectStats">Всего видео: 0</p>
             </div>
 
-            <button id="addMonthBtn" class="no-print self-start sm:self-auto flex items-center gap-2 px-4 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs font-medium text-zinc-200 transition-colors">
+            <button id="addMonthBtn" class="no-print self-start sm:self-auto flex items-center gap-2 px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs sm:text-sm font-medium text-zinc-200 transition-colors">
                 <i data-lucide="calendar-plus" class="w-4 h-4 text-blue-400"></i>
                 <span>Добавить месяц</span>
             </button>
@@ -100,25 +138,79 @@
 
     <!-- Bottom Sheets / Project Navigation -->
     <footer class="border-t border-zinc-800 bg-zinc-900/90 backdrop-blur-md fixed bottom-0 left-0 right-0 z-40 no-print">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between">
+        <div class="max-w-7xl mx-auto px-4 sm:px-8 flex items-center justify-between">
             
             <!-- Tabs list (Excel style) -->
-            <nav id="projectsTabs" class="flex items-center gap-1 overflow-x-auto custom-scrollbar py-2">
+            <nav id="projectsTabs" class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-2.5">
                 <!-- Rendered dynamically -->
             </nav>
 
-            <button id="addProjectBtn" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition-colors shrink-0 ml-2">
+            <button id="addProjectBtn" class="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition-colors shrink-0 ml-3">
                 <i data-lucide="plus" class="w-3.5 h-3.5"></i>
                 <span>Лист</span>
             </button>
         </div>
     </footer>
 
-    <!-- Hidden File Input for Image Upload -->
+    <!-- Sync Modal -->
+    <div id="syncModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200 no-print">
+        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-2xl p-6 shadow-2xl relative space-y-5">
+            
+            <div class="flex justify-between items-center">
+                <h3 class="text-base font-semibold text-zinc-100">Синхронизация через Облако</h3>
+                <button id="closeSyncModalBtn" class="text-zinc-400 hover:text-zinc-200">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <p class="text-xs text-zinc-400 leading-relaxed">
+                    Введите одинаковый <strong>Синхро-код</strong> на всех ваших устройствах (ноутбук, телефон), чтобы отчеты обновлялись в реальном времени!
+                </p>
+                <div class="flex gap-2">
+                    <input 
+                        type="text" 
+                        id="syncCodeInput" 
+                        placeholder="Код (например: айдай)"
+                        class="flex-grow bg-zinc-950 border border-zinc-800 text-xs sm:text-sm rounded-xl px-3.5 py-2.5 outline-none focus:border-blue-500 font-mono text-zinc-100"
+                    >
+                    <button id="applySyncCodeBtn" class="px-4 py-2.5 bg-blue-600 text-white hover:bg-blue-500 transition-opacity rounded-xl text-xs font-medium">
+                        Подключить
+                    </button>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-zinc-800 flex justify-between items-center text-xs text-zinc-400">
+                <span>Статус подключения:</span>
+                <span id="modalStatusText" class="font-medium text-emerald-400">Подключено к Firestore</span>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Hidden File Input -->
     <input type="file" id="globalFileInput" accept="image/*" class="hidden">
 
-    <script>
-        // --- Initial State ---
+    <!-- Firebase & App Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyD9-FySSKcaU-djgAXHmmi7DQoHIHNOY24",
+            authDomain: "task-task-70067.firebaseapp.com",
+            projectId: "task-task-70067",
+            storageBucket: "task-task-70067.firebasestorage.app",
+            messagingSenderId: "19699022007",
+            appId: "1:19699022007:web:b678be866ae4cf3689b532",
+            measurementId: "G-NXGYWXR1B4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Seed Data
         const DEFAULT_DATA = [
             {
                 id: 'proj_1',
@@ -133,7 +225,7 @@
                                 id: 'item_1',
                                 title: 'Общий таргетинг айыл',
                                 tag: '#рилс',
-                                status: 'published', // 'editing', 'approved', 'published'
+                                status: 'published',
                                 date: '2026-10-05',
                                 link: 'https://instagram.com',
                                 image: ''
@@ -165,11 +257,14 @@
             }
         ];
 
+        // State
         let projects = JSON.parse(localStorage.getItem('media_reports_data')) || DEFAULT_DATA;
         let activeProjectId = localStorage.getItem('media_active_proj') || projects[0]?.id || '';
-        let activeTargetForUpload = null; // { monthId, itemId }
+        let syncCode = localStorage.getItem('minimal_sync_code_reports') || 'айдай';
+        let unsubscribeFirestore = null;
+        let activeTargetForUpload = null;
 
-        // --- DOM Elements ---
+        // DOM Elements
         const projectsTabs = document.getElementById('projectsTabs');
         const currentProjectTitle = document.getElementById('currentProjectTitle');
         const projectStats = document.getElementById('projectStats');
@@ -179,11 +274,55 @@
         const addMonthBtn = document.getElementById('addMonthBtn');
         const globalFileInput = document.getElementById('globalFileInput');
 
-        // --- Helper Functions ---
-        function saveData() {
+        // Modal Elements
+        const syncModal = document.getElementById('syncModal');
+        const openSyncModalBtn = document.getElementById('openSyncModalBtn');
+        const closeSyncModalBtn = document.getElementById('closeSyncModalBtn');
+        const syncBtnLabel = document.getElementById('syncBtnLabel');
+        const syncBadge = document.getElementById('syncBadge');
+        const syncCodeInput = document.getElementById('syncCodeInput');
+        const applySyncCodeBtn = document.getElementById('applySyncCodeBtn');
+        const modalStatusText = document.getElementById('modalStatusText');
+
+        // Save & Firestore Sync
+        async function saveData() {
             localStorage.setItem('media_reports_data', JSON.stringify(projects));
             localStorage.setItem('media_active_proj', activeProjectId);
+
+            if (syncCode) {
+                try {
+                    const docRef = doc(db, 'reports', syncCode);
+                    await setDoc(docRef, { projects: projects, updatedAt: Date.now() }, { merge: true });
+                } catch (err) {
+                    console.error("Ошибка сохранения в Firestore:", err);
+                    modalStatusText.textContent = "Ошибка сети";
+                    modalStatusText.className = "font-medium text-amber-500";
+                }
+            }
             render();
+        }
+
+        function subscribeToCloud(code) {
+            if (unsubscribeFirestore) unsubscribeFirestore();
+
+            const docRef = doc(db, 'reports', code);
+            unsubscribeFirestore = onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists() && docSnap.data().projects) {
+                    projects = docSnap.data().projects;
+                    localStorage.setItem('media_reports_data', JSON.stringify(projects));
+                    render();
+                } else {
+                    saveData();
+                }
+                syncBadge.classList.remove('hidden');
+                syncBtnLabel.textContent = `Код: ${code}`;
+                modalStatusText.textContent = `Синхронизировано (${code})`;
+                modalStatusText.className = "font-medium text-emerald-400";
+            }, (error) => {
+                console.error("Ошибка подписки Firestore:", error);
+                modalStatusText.textContent = "Ошибка доступа к БД";
+                modalStatusText.className = "font-medium text-red-500";
+            });
         }
 
         function getActiveProject() {
@@ -193,39 +332,39 @@
         function getStatusBadge(status) {
             switch (status) {
                 case 'published':
-                    return `<span class="px-2.5 py-1 text-[11px] font-medium rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5 w-fit">
+                    return `<span class="px-3 py-1 text-xs font-medium rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5 w-fit">
                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Опубликовано
                     </span>`;
                 case 'approved':
-                    return `<span class="px-2.5 py-1 text-[11px] font-medium rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center gap-1.5 w-fit">
+                    return `<span class="px-3 py-1 text-xs font-medium rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center gap-1.5 w-fit">
                         <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Утвержден
                     </span>`;
-                default: // editing
-                    return `<span class="px-2.5 py-1 text-[11px] font-medium rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1.5 w-fit">
+                default:
+                    return `<span class="px-3 py-1 text-xs font-medium rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1.5 w-fit">
                         <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span> Монтаж
                     </span>`;
             }
         }
 
-        // --- Render Engine ---
+        // Render Engine
         function render() {
             const activeProj = getActiveProject();
             if (!activeProj) return;
 
             activeProjectId = activeProj.id;
 
-            // 1. Render Bottom Tabs
+            // 1. Bottom Tabs
             projectsTabs.innerHTML = projects.map(p => `
                 <button 
                     onclick="switchProject('${p.id}')"
-                    class="px-4 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap flex items-center gap-2 ${p.id === activeProjectId ? 'bg-blue-600 text-white shadow-sm' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'}"
+                    class="px-4 py-2 text-xs font-medium rounded-lg transition-all whitespace-nowrap flex items-center gap-2 ${p.id === activeProjectId ? 'bg-blue-600 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'}"
                 >
-                    <i data-lucide="file-text" class="w-3.5 h-3.5 opacity-70"></i>
+                    <i data-lucide="file-text" class="w-4 h-4 opacity-70"></i>
                     <span>${escapeHtml(p.name)}</span>
                 </button>
             `).join('');
 
-            // 2. Render Project Header
+            // 2. Project Header
             currentProjectTitle.textContent = activeProj.name;
             
             let totalVideos = 0;
@@ -236,10 +375,10 @@
             });
             projectStats.textContent = `Всего видео: ${totalVideos} • Опубликовано: ${publishedVideos} • В процессе: ${totalVideos - publishedVideos}`;
 
-            // 3. Render Months Accordion
+            // 3. Months Accordion
             if (activeProj.months.length === 0) {
                 monthsContainer.innerHTML = `
-                    <div class="text-center py-12 border border-dashed border-zinc-800 rounded-2xl">
+                    <div class="text-center py-16 border border-dashed border-zinc-800 rounded-2xl">
                         <p class="text-sm text-zinc-500">Нет добавленных месяцев. Нажмите «Добавить месяц» выше.</p>
                     </div>
                 `;
@@ -254,15 +393,15 @@
             return `
                 <div class="print-card bg-zinc-900/60 border border-zinc-800/80 rounded-2xl overflow-hidden transition-all shadow-sm">
                     <!-- Month Header -->
-                    <div class="px-5 py-4 bg-zinc-900/90 flex items-center justify-between border-b border-zinc-800/60 select-none">
+                    <div class="px-6 py-4 bg-zinc-900/90 flex items-center justify-between border-b border-zinc-800/60 select-none">
                         <div class="flex items-center gap-3 cursor-pointer" onclick="toggleMonth('${month.id}')">
                             <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-400 transition-transform ${month.isOpen ? '' : '-rotate-90'}"></i>
-                            <h3 class="font-semibold text-sm text-zinc-100">${escapeHtml(month.title)}</h3>
-                            <span class="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-mono">${month.items.length}</span>
+                            <h3 class="font-semibold text-base text-zinc-100">${escapeHtml(month.title)}</h3>
+                            <span class="text-xs px-2.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-mono">${month.items.length}</span>
                         </div>
 
                         <div class="flex items-center gap-2 no-print">
-                            <button onclick="addVideo('${month.id}')" class="px-3 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition-colors flex items-center gap-1.5">
+                            <button onclick="addVideo('${month.id}')" class="px-3.5 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition-colors flex items-center gap-1.5">
                                 <i data-lucide="plus" class="w-3.5 h-3.5"></i>
                                 <span>Добавить ролик</span>
                             </button>
@@ -273,22 +412,22 @@
                     </div>
 
                     <!-- Month Items Table -->
-                    <div class="${month.isOpen ? 'block' : 'hidden'} print-accordion-content p-2 sm:p-4">
+                    <div class="${month.isOpen ? 'block' : 'hidden'} print-accordion-content p-3 sm:p-5">
                         ${month.items.length === 0 ? `
                             <div class="text-center py-8 text-xs text-zinc-500">
                                 В этом месяце пока нет роликов.
                             </div>
                         ` : `
                             <div class="overflow-x-auto">
-                                <table class="w-full text-left text-xs border-collapse">
+                                <table class="w-full text-left text-sm border-collapse">
                                     <thead>
-                                        <tr class="text-zinc-500 border-b border-zinc-800/60 uppercase tracking-wider text-[10px]">
-                                            <th class="py-2 px-3 w-10">№</th>
-                                            <th class="py-2 px-3 w-20">Превью (3:4)</th>
-                                            <th class="py-2 px-3">Название / Тэг</th>
-                                            <th class="py-2 px-3 w-48">Статус / Дата</th>
-                                            <th class="py-2 px-3 w-32 no-print">Ссылка</th>
-                                            <th class="py-2 px-3 w-12 text-right no-print"></th>
+                                        <tr class="text-zinc-500 border-b border-zinc-800/60 uppercase tracking-wider text-xs">
+                                            <th class="py-2.5 px-3 w-10">№</th>
+                                            <th class="py-2.5 px-3 w-24">Превью</th>
+                                            <th class="py-2.5 px-3">Название / Тэг</th>
+                                            <th class="py-2.5 px-3 w-52">Статус / Дата</th>
+                                            <th class="py-2.5 px-3 w-36 no-print">Ссылка</th>
+                                            <th class="py-2.5 px-3 w-12 text-right no-print"></th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-zinc-800/40">
@@ -308,71 +447,71 @@
             return `
                 <tr class="group hover:bg-zinc-800/30 transition-colors">
                     <!-- Index -->
-                    <td class="py-3 px-3 text-zinc-500 font-mono font-medium">${index}</td>
+                    <td class="py-3.5 px-3 text-zinc-500 font-mono font-medium text-xs sm:text-sm">${index}</td>
 
-                    <!-- Drag & Drop Preview Image Cell (3:4 Aspect Ratio) -->
-                    <td class="py-3 px-3">
+                    <!-- Drag & Drop Preview Image (Увеличенная карточка 3:4) -->
+                    <td class="py-3.5 px-3">
                         <div 
                             tabindex="0"
                             onclick="selectTargetForPaste('${monthId}', '${item.id}')"
                             ondragover="handleDragOver(event)"
                             ondragleave="handleDragLeave(event)"
                             ondrop="handleDrop(event, '${monthId}', '${item.id}')"
-                            class="preview-dropzone w-14 aspect-[3/4] rounded-lg border border-zinc-800 bg-zinc-950 flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group/img transition-all hover:border-blue-500/50 outline-none focus:ring-2 focus:ring-blue-500/40 shrink-0"
+                            class="preview-dropzone w-16 aspect-[3/4] rounded-xl border border-zinc-800 bg-zinc-950 flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group/img transition-all hover:border-blue-500/60 outline-none focus:ring-2 focus:ring-blue-500/40 shrink-0"
                             title="Перетащите фото сюда, кликните или вставьте (Ctrl+V)"
                         >
                             ${item.image ? `
                                 <img src="${item.image}" class="w-full h-full object-cover">
-                                <div class="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 flex flex-col items-center justify-center gap-1 transition-opacity no-print text-[9px] text-zinc-300">
-                                    <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                                <div class="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 flex flex-col items-center justify-center gap-1 transition-opacity no-print text-[10px] text-zinc-200">
+                                    <i data-lucide="upload" class="w-4 h-4"></i>
                                     <span>Заменить</span>
                                 </div>
                             ` : `
-                                <i data-lucide="image-plus" class="w-4 h-4 text-zinc-600 group-hover/img:text-blue-400 no-print"></i>
-                                <span class="text-[8px] text-zinc-600 mt-0.5 no-print">3:4</span>
+                                <i data-lucide="image-plus" class="w-5 h-5 text-zinc-600 group-hover/img:text-blue-400 no-print"></i>
+                                <span class="text-[9px] text-zinc-600 mt-1 no-print">3:4</span>
                             `}
                         </div>
                     </td>
 
                     <!-- Title & Tag -->
-                    <td class="py-3 px-3">
+                    <td class="py-3.5 px-3">
                         <input 
                             type="text" 
                             value="${escapeHtml(item.title)}" 
                             placeholder="Название ролика..." 
                             onchange="updateItem('${monthId}', '${item.id}', 'title', this.value)"
-                            class="w-full bg-transparent font-medium text-zinc-200 outline-none focus:border-b focus:border-blue-500 py-0.5"
+                            class="w-full bg-transparent font-medium text-sm sm:text-base text-zinc-100 outline-none focus:border-b focus:border-blue-500 py-0.5"
                         >
                         <input 
                             type="text" 
                             value="${escapeHtml(item.tag || '')}" 
                             placeholder="#тэг" 
                             onchange="updateItem('${monthId}', '${item.id}', 'tag', this.value)"
-                            class="w-full bg-transparent text-[11px] text-blue-400/80 outline-none mt-0.5"
+                            class="w-full bg-transparent text-xs text-blue-400/90 outline-none mt-1"
                         >
                     </td>
 
-                    <!-- Status + Conditional Date Input -->
-                    <td class="py-3 px-3">
-                        <div class="flex flex-col gap-1.5">
+                    <!-- Status + Conditional Date -->
+                    <td class="py-3.5 px-3">
+                        <div class="flex flex-col gap-2">
                             <select 
                                 onchange="updateItem('${monthId}', '${item.id}', 'status', this.value)"
-                                class="bg-zinc-950 border border-zinc-800 text-xs rounded-lg px-2.5 py-1.5 text-zinc-300 outline-none focus:border-zinc-700 cursor-pointer no-print w-fit"
+                                class="bg-zinc-950 border border-zinc-800 text-xs sm:text-sm rounded-xl px-3 py-1.5 text-zinc-200 outline-none focus:border-zinc-700 cursor-pointer no-print w-fit"
                             >
                                 <option value="editing" ${item.status === 'editing' ? 'selected' : ''}>🔵 Монтаж</option>
                                 <option value="approved" ${item.status === 'approved' ? 'selected' : ''}>🟣 Утвержден</option>
                                 <option value="published" ${item.status === 'published' ? 'selected' : ''}>🟢 Опубликовано</option>
                             </select>
 
-                            <!-- Print Mode Status -->
+                            <!-- Print Mode Badge -->
                             <div class="hidden print:block">
                                 ${getStatusBadge(item.status)}
                             </div>
 
                             <!-- Date (Shows only if Published) -->
                             ${isPublished ? `
-                                <div class="flex items-center gap-1.5 text-[11px] text-zinc-400 mt-0.5">
-                                    <i data-lucide="calendar" class="w-3 h-3 text-emerald-400/80 no-print"></i>
+                                <div class="flex items-center gap-1.5 text-xs text-zinc-400 mt-0.5">
+                                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-emerald-400/80 no-print"></i>
                                     <input 
                                         type="date" 
                                         value="${item.date || ''}" 
@@ -385,10 +524,10 @@
                     </td>
 
                     <!-- Link -->
-                    <td class="py-3 px-3 no-print">
+                    <td class="py-3.5 px-3 no-print">
                         ${item.link ? `
-                            <a href="${escapeHtml(item.link)}" target="_blank" class="inline-flex items-center gap-1 text-blue-400 hover:underline text-[11px]">
-                                <i data-lucide="external-link" class="w-3 h-3"></i> Посмотреть
+                            <a href="${escapeHtml(item.link)}" target="_blank" class="inline-flex items-center gap-1 text-blue-400 hover:underline text-xs mb-1">
+                                <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Посмотреть
                             </a>
                         ` : ''}
                         <input 
@@ -396,15 +535,15 @@
                             placeholder="Ссылка..." 
                             value="${escapeHtml(item.link || '')}"
                             onchange="updateItem('${monthId}', '${item.id}', 'link', this.value)"
-                            class="w-full bg-transparent text-[10px] text-zinc-500 outline-none focus:text-zinc-300 mt-0.5"
+                            class="w-full bg-transparent text-xs text-zinc-500 outline-none focus:text-zinc-300"
                         >
                     </td>
 
                     <!-- Delete Action -->
-                    <td class="py-3 px-3 text-right no-print">
+                    <td class="py-3.5 px-3 text-right no-print">
                         <button 
                             onclick="deleteVideo('${monthId}', '${item.id}')"
-                            class="opacity-0 group-hover:opacity-100 p-1 text-zinc-600 hover:text-red-400 transition-all rounded"
+                            class="opacity-0 group-hover:opacity-100 p-1.5 text-zinc-600 hover:text-red-400 transition-all rounded-lg"
                             title="Удалить"
                         >
                             <i data-lucide="x" class="w-4 h-4"></i>
@@ -414,11 +553,11 @@
             `;
         }
 
-        // --- Actions ---
-        function switchProject(id) {
+        // Actions
+        window.switchProject = (id) => {
             activeProjectId = id;
             saveData();
-        }
+        };
 
         addProjectBtn.addEventListener('click', () => {
             const name = prompt('Название нового листа (проекта):');
@@ -465,24 +604,24 @@
             }
         });
 
-        function toggleMonth(monthId) {
+        window.toggleMonth = (monthId) => {
             const proj = getActiveProject();
             const month = proj.months.find(m => m.id === monthId);
             if (month) {
                 month.isOpen = !month.isOpen;
                 saveData();
             }
-        }
+        };
 
-        function deleteMonth(monthId) {
+        window.deleteMonth = (monthId) => {
             if (confirm('Удалить весь месяц и все ролики в нем?')) {
                 const proj = getActiveProject();
                 proj.months = proj.months.filter(m => m.id !== monthId);
                 saveData();
             }
-        }
+        };
 
-        function addVideo(monthId) {
+        window.addVideo = (monthId) => {
             const proj = getActiveProject();
             const month = proj.months.find(m => m.id === monthId);
             if (month) {
@@ -497,9 +636,9 @@
                 });
                 saveData();
             }
-        }
+        };
 
-        function updateItem(monthId, itemId, key, value) {
+        window.updateItem = (monthId, itemId, key, value) => {
             const proj = getActiveProject();
             const month = proj.months.find(m => m.id === monthId);
             if (month) {
@@ -512,22 +651,22 @@
                     saveData();
                 }
             }
-        }
+        };
 
-        function deleteVideo(monthId, itemId) {
+        window.deleteVideo = (monthId, itemId) => {
             const proj = getActiveProject();
             const month = proj.months.find(m => m.id === monthId);
             if (month) {
                 month.items = month.items.filter(i => i.id !== itemId);
                 saveData();
             }
-        }
+        };
 
-        // --- Drag & Drop + Clipboard Paste Handlers ---
-        function selectTargetForPaste(monthId, itemId) {
+        // Drag & Drop + Clipboard Upload
+        window.selectTargetForPaste = (monthId, itemId) => {
             activeTargetForUpload = { monthId, itemId };
             triggerImageUpload(monthId, itemId);
-        }
+        };
 
         function triggerImageUpload(monthId, itemId) {
             activeTargetForUpload = { monthId, itemId };
@@ -541,25 +680,24 @@
             }
         });
 
-        function handleDragOver(e) {
+        window.handleDragOver = (e) => {
             e.preventDefault();
             e.currentTarget.classList.add('drag-over');
-        }
+        };
 
-        function handleDragLeave(e) {
+        window.handleDragLeave = (e) => {
             e.currentTarget.classList.remove('drag-over');
-        }
+        };
 
-        function handleDrop(e, monthId, itemId) {
+        window.handleDrop = (e, monthId, itemId) => {
             e.preventDefault();
             e.currentTarget.classList.remove('drag-over');
             const file = e.dataTransfer.files[0];
             if (file && file.type.startsWith('image/')) {
                 processFile(file, monthId, itemId);
             }
-        }
+        };
 
-        // Global Paste Event Listener (Ctrl + V)
         window.addEventListener('paste', (e) => {
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
             for (let item of items) {
@@ -589,8 +727,31 @@
             return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         }
 
-        // Initial Load
+        // Modal Handlers
+        openSyncModalBtn.addEventListener('click', () => {
+            syncCodeInput.value = syncCode;
+            syncModal.classList.remove('opacity-0', 'pointer-events-none');
+        });
+
+        closeSyncModalBtn.addEventListener('click', () => {
+            syncModal.classList.add('opacity-0', 'pointer-events-none');
+        });
+
+        applySyncCodeBtn.addEventListener('click', () => {
+            const code = syncCodeInput.value.trim();
+            if (code) {
+                syncCode = code;
+                localStorage.setItem('minimal_sync_code_reports', code);
+                subscribeToCloud(code);
+                syncModal.classList.add('opacity-0', 'pointer-events-none');
+            }
+        });
+
+        // Initialize
         render();
+        if (syncCode) {
+            subscribeToCloud(syncCode);
+        }
     </script>
 </body>
 </html>
