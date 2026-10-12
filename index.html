@@ -30,7 +30,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#090d16">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%23090d16'/><rect x='128' y='128' width='256' height='256' rx='40' fill='none' stroke='%233b82f6' stroke-width='32'/><path d='M180 256l50 50 102-102' fill='none' stroke='%233b82f6' stroke-width='32' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='120' fill='%23090d16'/><rect x='128' y='128' width='256' height='256' rx='40' fill='none' stroke='%233b82f6' stroke-width='32'/><path d='M180 256l50 50 102-102' fill='none' stroke='%233b82f6' stroke-width='32' stroke-linecap='round' stroke-linejoin='round'/></svg>">
 
     <style>
         body {
@@ -182,7 +182,7 @@
 
             <div class="pt-3 border-t border-zinc-800 flex justify-between items-center text-xs text-zinc-400">
                 <span>Статус подключения:</span>
-                <span id="modalStatusText" class="font-medium text-emerald-400">Подключено к Firestore</span>
+                <span id="modalStatusText" class="font-medium text-emerald-400">Локальный режим</span>
             </div>
 
         </div>
@@ -210,57 +210,10 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Seed Data
-        const DEFAULT_DATA = [
-            {
-                id: 'proj_1',
-                name: 'Клиника Эсма',
-                months: [
-                    {
-                        id: 'm_1',
-                        title: 'Октябрь 2026',
-                        isOpen: true,
-                        items: [
-                            {
-                                id: 'item_1',
-                                title: 'Общий таргетинг айыл',
-                                tag: '#рилс',
-                                status: 'published',
-                                date: '2026-10-05',
-                                link: 'https://instagram.com',
-                                image: ''
-                            },
-                            {
-                                id: 'item_2',
-                                title: 'Пригласительные Улан Байке',
-                                tag: '#съемка',
-                                status: 'editing',
-                                date: '',
-                                link: '',
-                                image: ''
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                id: 'proj_2',
-                name: 'Рестобар Айыл',
-                months: [
-                    {
-                        id: 'm_2',
-                        title: 'Октябрь 2026',
-                        isOpen: true,
-                        items: []
-                    }
-                ]
-            }
-        ];
-
-        // State
-        let projects = JSON.parse(localStorage.getItem('media_reports_data')) || DEFAULT_DATA;
-        let activeProjectId = localStorage.getItem('media_active_proj') || projects[0]?.id || '';
-        let syncCode = localStorage.getItem('minimal_sync_code_reports') || 'айдай';
+        // State (Чистый старт по умолчанию)
+        let projects = JSON.parse(localStorage.getItem('media_reports_data')) || [];
+        let activeProjectId = localStorage.getItem('media_active_proj') || '';
+        let syncCode = localStorage.getItem('minimal_sync_code_reports') || '';
         let unsubscribeFirestore = null;
         let activeTargetForUpload = null;
 
@@ -284,7 +237,7 @@
         const applySyncCodeBtn = document.getElementById('applySyncCodeBtn');
         const modalStatusText = document.getElementById('modalStatusText');
 
-        // Save & Firestore Sync (Используем коллекцию tasks с префиксом report_)
+        // Save & Firestore Sync
         async function saveData() {
             localStorage.setItem('media_reports_data', JSON.stringify(projects));
             localStorage.setItem('media_active_proj', activeProjectId);
@@ -303,6 +256,14 @@
         }
 
         function subscribeToCloud(code) {
+            if (!code) {
+                syncBadge.classList.add('hidden');
+                syncBtnLabel.textContent = 'Синхронизация';
+                modalStatusText.textContent = 'Локальный режим';
+                modalStatusText.className = 'font-medium text-zinc-400';
+                return;
+            }
+
             if (unsubscribeFirestore) unsubscribeFirestore();
 
             const docRef = doc(db, 'tasks', 'report_' + code);
@@ -348,12 +309,43 @@
 
         // Render Engine
         function render() {
+            // ЭКРАН ПРИ ПУСТОМ СОСТОЯНИИ (БЕЗ ПРОЕКТОВ)
+            if (!projects || projects.length === 0) {
+                currentProjectTitle.textContent = "Нет проектов";
+                projectStats.textContent = "Создайте новый проект или введите Синхро-код";
+                monthsContainer.innerHTML = `
+                    <div class="text-center py-20 border border-dashed border-zinc-800 rounded-2xl space-y-4">
+                        <p class="text-zinc-400 text-sm">У вас пока нет активных листов с отчетами.</p>
+                        <div class="flex items-center justify-center gap-3">
+                            <button onclick="document.getElementById('addProjectBtn').click()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-xl transition-all">
+                                + Создать проект
+                            </button>
+                            <button onclick="document.getElementById('openSyncModalBtn').click()" class="px-4 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-medium rounded-xl transition-all">
+                                ☁️ Ввести Синхро-код
+                            </button>
+                        </div>
+                    </div>
+                `;
+                projectsTabs.innerHTML = `<span class="text-xs text-zinc-500 italic px-2">Нет сохраненных листов</span>`;
+                deleteProjectBtn.classList.add('hidden');
+                addMonthBtn.classList.add('hidden');
+                lucide.createIcons();
+                return;
+            }
+
+            deleteProjectBtn.classList.remove('hidden');
+            addMonthBtn.classList.remove('hidden');
+
             const activeProj = getActiveProject();
-            if (!activeProj) return;
+            if (!activeProj) {
+                activeProjectId = projects[0].id;
+                render();
+                return;
+            }
 
             activeProjectId = activeProj.id;
 
-            // 1. Bottom Tabs (Строгое равенство ID)
+            // 1. Bottom Tabs
             projectsTabs.innerHTML = projects.map(p => `
                 <button 
                     onclick="window.switchProject('${p.id}')"
@@ -579,13 +571,10 @@
         });
 
         deleteProjectBtn.addEventListener('click', () => {
-            if (projects.length <= 1) {
-                alert('Нельзя удалить единственный лист.');
-                return;
-            }
+            if (projects.length === 0) return;
             if (confirm('Вы уверены, что хотите удалить этот лист проекта?')) {
                 projects = projects.filter(p => String(p.id) !== String(activeProjectId));
-                activeProjectId = projects[0].id;
+                activeProjectId = projects[0]?.id || '';
                 saveData();
             }
         });
@@ -594,18 +583,21 @@
             const title = prompt('Введите название месяца (например: Ноябрь 2026):');
             if (title && title.trim()) {
                 const proj = getActiveProject();
-                proj.months.unshift({
-                    id: 'm_' + Date.now(),
-                    title: title.trim(),
-                    isOpen: true,
-                    items: []
-                });
-                saveData();
+                if (proj) {
+                    proj.months.unshift({
+                        id: 'm_' + Date.now(),
+                        title: title.trim(),
+                        isOpen: true,
+                        items: []
+                    });
+                    saveData();
+                }
             }
         });
 
         window.toggleMonth = (monthId) => {
             const proj = getActiveProject();
+            if (!proj) return;
             const month = proj.months.find(m => String(m.id) === String(monthId));
             if (month) {
                 month.isOpen = !month.isOpen;
@@ -616,6 +608,7 @@
         window.deleteMonth = (monthId) => {
             if (confirm('Удалить весь месяц и все ролики в нем?')) {
                 const proj = getActiveProject();
+                if (!proj) return;
                 proj.months = proj.months.filter(m => String(m.id) !== String(monthId));
                 saveData();
             }
@@ -623,6 +616,7 @@
 
         window.addVideo = (monthId) => {
             const proj = getActiveProject();
+            if (!proj) return;
             const month = proj.months.find(m => String(m.id) === String(monthId));
             if (month) {
                 month.items.push({
@@ -640,6 +634,7 @@
 
         window.updateItem = (monthId, itemId, key, value) => {
             const proj = getActiveProject();
+            if (!proj) return;
             const month = proj.months.find(m => String(m.id) === String(monthId));
             if (month) {
                 const item = month.items.find(i => String(i.id) === String(itemId));
@@ -655,6 +650,7 @@
 
         window.deleteVideo = (monthId, itemId) => {
             const proj = getActiveProject();
+            if (!proj) return;
             const month = proj.months.find(m => String(m.id) === String(monthId));
             if (month) {
                 month.items = month.items.filter(i => String(i.id) !== String(itemId));
@@ -752,6 +748,17 @@
         if (syncCode) {
             subscribeToCloud(syncCode);
         }
+    </script>
+
+    <!-- Регистрация SW для PWA -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('SW зарегистрирован:', reg))
+            .catch(err => console.error('Ошибка SW:', err));
+        });
+      }
     </script>
 </body>
 </html>
