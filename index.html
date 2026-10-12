@@ -85,7 +85,7 @@
                 <div class="p-2 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20">
                     <i data-lucide="clapperboard" class="w-5 h-5"></i>
                 </div>
-                <h1 class="text-lg font-semibold tracking-tight">Отчеты</h1>
+                <h1 class="text-lg font-semibold tracking-tight">Медиа Отчеты</h1>
                 <span id="syncBadge" class="hidden text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center gap-1.5">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                     Облако
@@ -108,7 +108,7 @@
         </div>
     </header>
 
-    <!-- Main Content (Увеличен контейнер до max-w-7xl) -->
+    <!-- Main Content -->
     <main class="max-w-7xl w-full mx-auto px-4 sm:px-8 py-8 flex-grow">
         
         <!-- Project Header Info -->
@@ -284,14 +284,14 @@
         const applySyncCodeBtn = document.getElementById('applySyncCodeBtn');
         const modalStatusText = document.getElementById('modalStatusText');
 
-        // Save & Firestore Sync
+        // Save & Firestore Sync (Используем коллекцию tasks с префиксом report_)
         async function saveData() {
             localStorage.setItem('media_reports_data', JSON.stringify(projects));
             localStorage.setItem('media_active_proj', activeProjectId);
 
             if (syncCode) {
                 try {
-                    const docRef = doc(db, 'reports', syncCode);
+                    const docRef = doc(db, 'tasks', 'report_' + syncCode);
                     await setDoc(docRef, { projects: projects, updatedAt: Date.now() }, { merge: true });
                 } catch (err) {
                     console.error("Ошибка сохранения в Firestore:", err);
@@ -305,7 +305,7 @@
         function subscribeToCloud(code) {
             if (unsubscribeFirestore) unsubscribeFirestore();
 
-            const docRef = doc(db, 'reports', code);
+            const docRef = doc(db, 'tasks', 'report_' + code);
             unsubscribeFirestore = onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists() && docSnap.data().projects) {
                     projects = docSnap.data().projects;
@@ -326,7 +326,7 @@
         }
 
         function getActiveProject() {
-            return projects.find(p => p.id === activeProjectId) || projects[0];
+            return projects.find(p => String(p.id) === String(activeProjectId)) || projects[0];
         }
 
         function getStatusBadge(status) {
@@ -353,11 +353,11 @@
 
             activeProjectId = activeProj.id;
 
-            // 1. Bottom Tabs
+            // 1. Bottom Tabs (Строгое равенство ID)
             projectsTabs.innerHTML = projects.map(p => `
                 <button 
-                    onclick="switchProject('${p.id}')"
-                    class="px-4 py-2 text-xs font-medium rounded-lg transition-all whitespace-nowrap flex items-center gap-2 ${p.id === activeProjectId ? 'bg-blue-600 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'}"
+                    onclick="window.switchProject('${p.id}')"
+                    class="px-4 py-2 text-xs font-medium rounded-lg transition-all whitespace-nowrap flex items-center gap-2 ${String(p.id) === String(activeProjectId) ? 'bg-blue-600 text-white shadow-md' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60'}"
                 >
                     <i data-lucide="file-text" class="w-4 h-4 opacity-70"></i>
                     <span>${escapeHtml(p.name)}</span>
@@ -394,18 +394,18 @@
                 <div class="print-card bg-zinc-900/60 border border-zinc-800/80 rounded-2xl overflow-hidden transition-all shadow-sm">
                     <!-- Month Header -->
                     <div class="px-6 py-4 bg-zinc-900/90 flex items-center justify-between border-b border-zinc-800/60 select-none">
-                        <div class="flex items-center gap-3 cursor-pointer" onclick="toggleMonth('${month.id}')">
+                        <div class="flex items-center gap-3 cursor-pointer" onclick="window.toggleMonth('${month.id}')">
                             <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-400 transition-transform ${month.isOpen ? '' : '-rotate-90'}"></i>
                             <h3 class="font-semibold text-base text-zinc-100">${escapeHtml(month.title)}</h3>
                             <span class="text-xs px-2.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-mono">${month.items.length}</span>
                         </div>
 
                         <div class="flex items-center gap-2 no-print">
-                            <button onclick="addVideo('${month.id}')" class="px-3.5 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition-colors flex items-center gap-1.5">
+                            <button onclick="window.addVideo('${month.id}')" class="px-3.5 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition-colors flex items-center gap-1.5">
                                 <i data-lucide="plus" class="w-3.5 h-3.5"></i>
                                 <span>Добавить ролик</span>
                             </button>
-                            <button onclick="deleteMonth('${month.id}')" class="p-1.5 text-zinc-500 hover:text-red-400 transition-colors rounded-lg">
+                            <button onclick="window.deleteMonth('${month.id}')" class="p-1.5 text-zinc-500 hover:text-red-400 transition-colors rounded-lg">
                                 <i data-lucide="trash" class="w-3.5 h-3.5"></i>
                             </button>
                         </div>
@@ -449,14 +449,14 @@
                     <!-- Index -->
                     <td class="py-3.5 px-3 text-zinc-500 font-mono font-medium text-xs sm:text-sm">${index}</td>
 
-                    <!-- Drag & Drop Preview Image (Увеличенная карточка 3:4) -->
+                    <!-- Drag & Drop Preview Image -->
                     <td class="py-3.5 px-3">
                         <div 
                             tabindex="0"
-                            onclick="selectTargetForPaste('${monthId}', '${item.id}')"
-                            ondragover="handleDragOver(event)"
-                            ondragleave="handleDragLeave(event)"
-                            ondrop="handleDrop(event, '${monthId}', '${item.id}')"
+                            onclick="window.selectTargetForPaste('${monthId}', '${item.id}')"
+                            ondragover="window.handleDragOver(event)"
+                            ondragleave="window.handleDragLeave(event)"
+                            ondrop="window.handleDrop(event, '${monthId}', '${item.id}')"
                             class="preview-dropzone w-16 aspect-[3/4] rounded-xl border border-zinc-800 bg-zinc-950 flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group/img transition-all hover:border-blue-500/60 outline-none focus:ring-2 focus:ring-blue-500/40 shrink-0"
                             title="Перетащите фото сюда, кликните или вставьте (Ctrl+V)"
                         >
@@ -479,14 +479,14 @@
                             type="text" 
                             value="${escapeHtml(item.title)}" 
                             placeholder="Название ролика..." 
-                            onchange="updateItem('${monthId}', '${item.id}', 'title', this.value)"
+                            onchange="window.updateItem('${monthId}', '${item.id}', 'title', this.value)"
                             class="w-full bg-transparent font-medium text-sm sm:text-base text-zinc-100 outline-none focus:border-b focus:border-blue-500 py-0.5"
                         >
                         <input 
                             type="text" 
                             value="${escapeHtml(item.tag || '')}" 
                             placeholder="#тэг" 
-                            onchange="updateItem('${monthId}', '${item.id}', 'tag', this.value)"
+                            onchange="window.updateItem('${monthId}', '${item.id}', 'tag', this.value)"
                             class="w-full bg-transparent text-xs text-blue-400/90 outline-none mt-1"
                         >
                     </td>
@@ -495,7 +495,7 @@
                     <td class="py-3.5 px-3">
                         <div class="flex flex-col gap-2">
                             <select 
-                                onchange="updateItem('${monthId}', '${item.id}', 'status', this.value)"
+                                onchange="window.updateItem('${monthId}', '${item.id}', 'status', this.value)"
                                 class="bg-zinc-950 border border-zinc-800 text-xs sm:text-sm rounded-xl px-3 py-1.5 text-zinc-200 outline-none focus:border-zinc-700 cursor-pointer no-print w-fit"
                             >
                                 <option value="editing" ${item.status === 'editing' ? 'selected' : ''}>🔵 Монтаж</option>
@@ -515,7 +515,7 @@
                                     <input 
                                         type="date" 
                                         value="${item.date || ''}" 
-                                        onchange="updateItem('${monthId}', '${item.id}', 'date', this.value)"
+                                        onchange="window.updateItem('${monthId}', '${item.id}', 'date', this.value)"
                                         class="bg-transparent text-xs text-emerald-400 outline-none focus:underline"
                                     >
                                 </div>
@@ -534,7 +534,7 @@
                             type="url" 
                             placeholder="Ссылка..." 
                             value="${escapeHtml(item.link || '')}"
-                            onchange="updateItem('${monthId}', '${item.id}', 'link', this.value)"
+                            onchange="window.updateItem('${monthId}', '${item.id}', 'link', this.value)"
                             class="w-full bg-transparent text-xs text-zinc-500 outline-none focus:text-zinc-300"
                         >
                     </td>
@@ -542,7 +542,7 @@
                     <!-- Delete Action -->
                     <td class="py-3.5 px-3 text-right no-print">
                         <button 
-                            onclick="deleteVideo('${monthId}', '${item.id}')"
+                            onclick="window.deleteVideo('${monthId}', '${item.id}')"
                             class="opacity-0 group-hover:opacity-100 p-1.5 text-zinc-600 hover:text-red-400 transition-all rounded-lg"
                             title="Удалить"
                         >
@@ -555,7 +555,7 @@
 
         // Actions
         window.switchProject = (id) => {
-            activeProjectId = id;
+            activeProjectId = String(id);
             saveData();
         };
 
@@ -584,7 +584,7 @@
                 return;
             }
             if (confirm('Вы уверены, что хотите удалить этот лист проекта?')) {
-                projects = projects.filter(p => p.id !== activeProjectId);
+                projects = projects.filter(p => String(p.id) !== String(activeProjectId));
                 activeProjectId = projects[0].id;
                 saveData();
             }
@@ -606,7 +606,7 @@
 
         window.toggleMonth = (monthId) => {
             const proj = getActiveProject();
-            const month = proj.months.find(m => m.id === monthId);
+            const month = proj.months.find(m => String(m.id) === String(monthId));
             if (month) {
                 month.isOpen = !month.isOpen;
                 saveData();
@@ -616,14 +616,14 @@
         window.deleteMonth = (monthId) => {
             if (confirm('Удалить весь месяц и все ролики в нем?')) {
                 const proj = getActiveProject();
-                proj.months = proj.months.filter(m => m.id !== monthId);
+                proj.months = proj.months.filter(m => String(m.id) !== String(monthId));
                 saveData();
             }
         };
 
         window.addVideo = (monthId) => {
             const proj = getActiveProject();
-            const month = proj.months.find(m => m.id === monthId);
+            const month = proj.months.find(m => String(m.id) === String(monthId));
             if (month) {
                 month.items.push({
                     id: 'item_' + Date.now(),
@@ -640,9 +640,9 @@
 
         window.updateItem = (monthId, itemId, key, value) => {
             const proj = getActiveProject();
-            const month = proj.months.find(m => m.id === monthId);
+            const month = proj.months.find(m => String(m.id) === String(monthId));
             if (month) {
-                const item = month.items.find(i => i.id === itemId);
+                const item = month.items.find(i => String(i.id) === String(itemId));
                 if (item) {
                     item[key] = value;
                     if (key === 'status' && value === 'published' && !item.date) {
@@ -655,9 +655,9 @@
 
         window.deleteVideo = (monthId, itemId) => {
             const proj = getActiveProject();
-            const month = proj.months.find(m => m.id === monthId);
+            const month = proj.months.find(m => String(m.id) === String(monthId));
             if (month) {
-                month.items = month.items.filter(i => i.id !== itemId);
+                month.items = month.items.filter(i => String(i.id) !== String(itemId));
                 saveData();
             }
         };
