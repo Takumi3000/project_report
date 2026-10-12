@@ -284,7 +284,7 @@
                                     <thead>
                                         <tr class="text-zinc-500 border-b border-zinc-800/60 uppercase tracking-wider text-[10px]">
                                             <th class="py-2 px-3 w-10">№</th>
-                                            <th class="py-2 px-3 w-20">Превью</th>
+                                            <th class="py-2 px-3 w-20">Превью (3:4)</th>
                                             <th class="py-2 px-3">Название / Тэг</th>
                                             <th class="py-2 px-3 w-48">Статус / Дата</th>
                                             <th class="py-2 px-3 w-32 no-print">Ссылка</th>
@@ -310,7 +310,7 @@
                     <!-- Index -->
                     <td class="py-3 px-3 text-zinc-500 font-mono font-medium">${index}</td>
 
-                    <!-- Drag & Drop Preview Image Cell -->
+                    <!-- Drag & Drop Preview Image Cell (3:4 Aspect Ratio) -->
                     <td class="py-3 px-3">
                         <div 
                             tabindex="0"
@@ -318,7 +318,7 @@
                             ondragover="handleDragOver(event)"
                             ondragleave="handleDragLeave(event)"
                             ondrop="handleDrop(event, '${monthId}', '${item.id}')"
-                            class="preview-dropzone w-14 h-18 rounded-lg border border-zinc-800 bg-zinc-950 flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group/img transition-all hover:border-blue-500/50 outline-none focus:ring-2 focus:ring-blue-500/40"
+                            class="preview-dropzone w-14 aspect-[3/4] rounded-lg border border-zinc-800 bg-zinc-950 flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group/img transition-all hover:border-blue-500/50 outline-none focus:ring-2 focus:ring-blue-500/40 shrink-0"
                             title="Перетащите фото сюда, кликните или вставьте (Ctrl+V)"
                         >
                             ${item.image ? `
@@ -329,7 +329,7 @@
                                 </div>
                             ` : `
                                 <i data-lucide="image-plus" class="w-4 h-4 text-zinc-600 group-hover/img:text-blue-400 no-print"></i>
-                                <span class="text-[8px] text-zinc-600 mt-1 no-print">Drop / Ctrl+V</span>
+                                <span class="text-[8px] text-zinc-600 mt-0.5 no-print">3:4</span>
                             `}
                         </div>
                     </td>
@@ -506,7 +506,6 @@
                 const item = month.items.find(i => i.id === itemId);
                 if (item) {
                     item[key] = value;
-                    // Auto set current date if published and date empty
                     if (key === 'status' && value === 'published' && !item.date) {
                         item.date = new Date().toISOString().split('T')[0];
                     }
