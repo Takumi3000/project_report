@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отчеты по проектам</title>
+    
+    <!-- Tailwind CSS & Lucide Icons -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 500: '#3b82f6', 600: '#2563eb' }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Печатные стили для чистого отчета */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; color: black !important; }
+            .print-card { border: 1px solid #e4e4e7 !important; background: white !important; box-shadow: none !important; }
+            .print-accordion-content { display: block !important; }
+            input, select, textarea { border: none !important; background: transparent !important; appearance: none !important; }
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.2); border-radius: 99px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(156, 163, 175, 0.4); }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col antialiased selection:bg-blue-500/20">
+
+    <!-- Top Navigation & Project Tabs -->
+    <header class="border-b border-zinc-800/80 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-40 no-print">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 pt-4 flex flex-col gap-4">
+            
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="p-2 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                        <i data-lucide="clapperboard" class="w-5 h-5"></i>
+                    </div>
+                    <h1 class="text-lg font-semibold tracking-tight">Медиа Отчеты</h1>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button id="addProjectBtn" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition-colors">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                        <span>Проект</span>
+                    </button>
+                    <button onclick="window.print()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 hover:bg-blue-500 text-white transition-colors shadow-lg shadow-blue-500/20">
+                        <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                        <span>Экспорт в PDF</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs list -->
+            <nav id="projectsTabs" class="flex items-center gap-1 overflow-x-auto custom-scrollbar pb-1 border-b border-transparent">
+                <!-- Rendered dynamically -->
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 flex-grow">
+        
+        <!-- Project Header Info -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-zinc-800/60">
+            <div>
+                <div class="flex items-center gap-3">
+                    <h2 id="currentProjectTitle" class="text-2xl font-bold tracking-tight text-white">Загрузка...</h2>
+                    <button id="deleteProjectBtn" class="no-print p-1 text-zinc-500 hover:text-red-400 transition-colors" title="Удалить проект">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-zinc-400 mt-1" id="projectStats">Всего видео: 0</p>
+            </div>
+
+            <button id="addMonthBtn" class="no-print self-start sm:self-auto flex items-center gap-2 px-4 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs font-medium text-zinc-200 transition-colors">
+                <i data-lucide="calendar-plus" class="w-4 h-4 text-blue-400"></i>
+                <span>Добавить месяц</span>
+            </button>
+        </div>
+
+        <!-- Months Accordion Container -->
+        <div id="monthsContainer" class="space-y-6">
+            <!-- Rendered dynamically -->
+        </div>
+
+    </main>
+
+    <!-- Hidden File Input for Image Upload -->
+    <input type="file" id="globalFileInput" accept="image/*" class="hidden">
+
+    <script>
+        // --- Initial State & Seed Data ---
+        const DEFAULT_DATA = [
+            {
+                id: 'proj_1',
+                name: 'Клиника Эсма',
+                months: [
+                    {
+                        id: 'm_1',
+                        title: 'Октябрь 2026',
+                        isOpen: true,
+                        items: [
+                            {
+                                id: 'item_1',
+                                title: 'Общий таргетинг айыл',
+                                tag: '#рилс',
+                                status: 'published', // 'plan', 'in_progress', 'published'
+                                date: '2026-10-05',
+                                link: 'https://instagram.com',
+                                image: ''
+                            },
+                            {
+                                id: 'item_2',
+                                title: 'Пригласительные Улан Байке',
+                                tag: '#съемка',
+                                status: 'in_progress',
+                                date: '2026-10-18',
+                                link: '',
+                                image: ''
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'proj_2',
+                name: 'Рестобар Айыл',
+                months: [
+                    {
+                        id: 'm_2',
+                        title: 'Октябрь 2026',
+                        isOpen: true,
+                        items: []
+                    }
+                ]
+            }
+        ];
+
+        let projects = JSON.parse(localStorage.getItem('media_reports_data')) || DEFAULT_DATA;
+        let activeProjectId = localStorage.getItem('media_active_proj') || projects[0]?.id || '';
+        let currentUploadTarget = null; // Stores { monthId, itemId }
+
+        // --- DOM Elements ---
+        const projectsTabs = document.getElementById('projectsTabs');
+        const currentProjectTitle = document.getElementById('currentProjectTitle');
+        const projectStats = document.getElementById('projectStats');
+        const monthsContainer = document.getElementById('monthsContainer');
+        const addProjectBtn = document.getElementById('addProjectBtn');
+        const deleteProjectBtn = document.getElementById('deleteProjectBtn');
+        const addMonthBtn = document.getElementById('addMonthBtn');
+        const globalFileInput = document.getElementById('globalFileInput');
+
+        // --- Helper Functions ---
+        function saveData() {
+            localStorage.setItem('media_reports_data', JSON.stringify(projects));
+            localStorage.setItem('media_active_proj', activeProjectId);
+            render();
+        }
+
+        function getActiveProject() {
+            return projects.find(p => p.id === activeProjectId) || projects[0];
+        }
+
+        function getStatusBadge(status) {
+            switch (status) {
+                case 'published':
+                    return `<span class="px-2.5 py-1 text-[11px] font-medium rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5 w-fit">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Опубликовано
+                    </span>`;
+                case 'in_progress':
+                    return `<span class="px-2.5 py-1 text-[11px] font-medium rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center gap-1.5 w-fit">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span> В процессе
+                    </span>`;
+                default:
+                    return `<span class="px-2.5 py-1 text-[11px] font-medium rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1.5 w-fit">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span> В плане
+                    </span>`;
+            }
+        }
+
+        // --- Render Engine ---
+        function render() {
+            const activeProj = getActiveProject();
+            if (!activeProj) return;
+
+            activeProjectId = activeProj.id;
+
+            // 1. Render Tabs
+            projectsTabs.innerHTML = projects.map(p => `
+                <button 
+                    onclick="switchProject('${p.id}')"
+                    class="px-4 py-2 text-xs font-medium rounded-t-xl transition-all whitespace-nowrap border-b-2 ${p.id === activeProjectId ? 'bg-zinc-800/80 text-white border-blue-500' : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 border-transparent'}"
+                >
+                    ${escapeHtml(p.name)}
+                </button>
+            `).join('');
+
+            // 2. Render Project Header
+            currentProjectTitle.textContent = activeProj.name;
+            
+            let totalVideos = 0;
+            let publishedVideos = 0;
+            activeProj.months.forEach(m => {
+                totalVideos += m.items.length;
+                publishedVideos += m.items.filter(i => i.status === 'published').length;
+            });
+            projectStats.textContent = `Всего видео: ${totalVideos} • Опубликовано: ${publishedVideos} • В процессе: ${totalVideos - publishedVideos}`;
+
+            // 3. Render Months Accordion
+            if (activeProj.months.length === 0) {
+                monthsContainer.innerHTML = `
+                    <div class="text-center py-12 border border-dashed border-zinc-800 rounded-2xl">
+                        <p class="text-sm text-zinc-500">Нет добавленных месяцев. Нажмите «Добавить месяц» выше.</p>
+                    </div>
+                `;
+            } else {
+                monthsContainer.innerHTML = activeProj.months.map(m => renderMonthSection(m)).join('');
+            }
+
+            lucide.createIcons();
+        }
+
+        function renderMonthSection(month) {
+            return `
+                <div class="print-card bg-zinc-900/60 border border-zinc-800/80 rounded-2xl overflow-hidden transition-all shadow-sm">
+                    <!-- Month Header -->
+                    <div class="px-5 py-4 bg-zinc-900/90 flex items-center justify-between border-b border-zinc-800/60 select-none">
+                        <div class="flex items-center gap-3 cursor-pointer" onclick="toggleMonth('${month.id}')">
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-400 transition-transform ${month.isOpen ? '' : '-rotate-90'}"></i>
+                            <h3 class="font-semibold text-sm text-zinc-100">${escapeHtml(month.title)}</h3>
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-mono">${month.items.length}</span>
+                        </div>
+
+                        <div class="flex items-center gap-2 no-print">
+                            <button onclick="addVideo('${month.id}')" class="px-3 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition-colors flex items-center gap-1.5">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                <span>Добавить ролик</span>
+                            </button>
+                            <button onclick="deleteMonth('${month.id}')" class="p-1.5 text-zinc-500 hover:text-red-400 transition-colors rounded-lg">
+                                <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Month Items Table / Grid -->
+                    <div class="${month.isOpen ? 'block' : 'hidden'} print-accordion-content p-2 sm:p-4">
+                        ${month.items.length === 0 ? `
+                            <div class="text-center py-8 text-xs text-zinc-500">
+                                В этом месяце пока нет роликов.
+                            </div>
+                        ` : `
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs border-collapse">
+                                    <thead>
+                                        <tr class="text-zinc-500 border-b border-zinc-800/60 uppercase tracking-wider text-[10px]">
+                                            <th class="py-2 px-3 w-10">№</th>
+                                            <th class="py-2 px-3 w-16">Превью</th>
+                                            <th class="py-2 px-3">Название / Тэг</th>
+                                            <th class="py-2 px-3 w-36">Статус</th>
+                                            <th class="py-2 px-3 w-32">Дата</th>
+                                            <th class="py-2 px-3 w-28 no-print">Ссылка</th>
+                                            <th class="py-2 px-3 w-12 text-right no-print"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-zinc-800/40">
+                                        ${month.items.map((item, index) => renderVideoRow(month.id, item, index + 1)).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        `}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderVideoRow(monthId, item, index) {
+            return `
+                <tr class="group hover:bg-zinc-800/30 transition-colors">
+                    <!-- Index -->
+                    <td class="py-3 px-3 text-zinc-500 font-mono font-medium">${index}</td>
+
+                    <!-- Preview Image -->
+                    <td class="py-3 px-3">
+                        <div 
+                            onclick="triggerImageUpload('${monthId}', '${item.id}')"
+                            class="w-12 h-16 rounded-lg border border-zinc-800 bg-zinc-950 flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group/img transition-all hover:border-zinc-700"
+                            title="Загрузить превью"
+                        >
+                            ${item.image ? `
+                                <img src="${item.image}" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity no-print">
+                                    <i data-lucide="camera" class="w-4 h-4 text-white"></i>
+                                </div>
+                            ` : `
+                                <i data-lucide="image-plus" class="w-4 h-4 text-zinc-600 group-hover/img:text-zinc-400 no-print"></i>
+                            `}
+                        </div>
+                    </td>
+
+                    <!-- Title & Tag -->
+                    <td class="py-3 px-3">
+                        <input 
+                            type="text" 
+                            value="${escapeHtml(item.title)}" 
+                            placeholder="Название ролика..." 
+                            onchange="updateItem('${monthId}', '${item.id}', 'title', this.value)"
+                            class="w-full bg-transparent font-medium text-zinc-200 outline-none focus:border-b focus:border-blue-500 py-0.5"
+                        >
+                        <input 
+                            type="text" 
+                            value="${escapeHtml(item.tag || '')}" 
+                            placeholder="#тэг" 
+                            onchange="updateItem('${monthId}', '${item.id}', 'tag', this.value)"
+                            class="w-full bg-transparent text-[11px] text-blue-400/80 outline-none mt-0.5"
+                        >
+                    </td>
+
+                    <!-- Status Dropdown -->
+                    <td class="py-3 px-3">
+                        <select 
+                            onchange="updateItem('${monthId}', '${item.id}', 'status', this.value)"
+                            class="bg-zinc-950 border border-zinc-800 text-xs rounded-lg px-2.5 py-1.5 text-zinc-300 outline-none focus:border-zinc-700 cursor-pointer no-print"
+                        >
+                            <option value="plan" ${item.status === 'plan' ? 'selected' : ''}>🟡 В плане</option>
+                            <option value="in_progress" ${item.status === 'in_progress' ? 'selected' : ''}>🔵 В процессе</option>
+                            <option value="published" ${item.status === 'published' ? 'selected' : ''}>🟢 Опубликовано</option>
+                        </select>
+                        <div class="hidden print:block">
+                            ${getStatusBadge(item.status)}
+                        </div>
+                    </td>
+
+                    <!-- Date -->
+                    <td class="py-3 px-3">
+                        <input 
+                            type="date" 
+                            value="${item.date || ''}" 
+                            onchange="updateItem('${monthId}', '${item.id}', 'date', this.value)"
+                            class="bg-transparent text-xs text-zinc-400 outline-none focus:text-zinc-200"
+                        >
+                    </td>
+
+                    <!-- Link -->
+                    <td class="py-3 px-3 no-print">
+                        ${item.link ? `
+                            <a href="${escapeHtml(item.link)}" target="_blank" class="inline-flex items-center gap-1 text-blue-400 hover:underline text-[11px]">
+                                <i data-lucide="external-link" class="w-3 h-3"></i> Ссылка
+                            </a>
+                        ` : ''}
+                        <input 
+                            type="url" 
+                            placeholder="https://..." 
+                            value="${escapeHtml(item.link || '')}"
+                            onchange="updateItem('${monthId}', '${item.id}', 'link', this.value)"
+                            class="w-full bg-transparent text-[10px] text-zinc-500 outline-none focus:text-zinc-300 mt-0.5"
+                        >
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="py-3 px-3 text-right no-print">
+                        <button 
+                            onclick="deleteVideo('${monthId}', '${item.id}')"
+                            class="opacity-0 group-hover:opacity-100 p-1 text-zinc-600 hover:text-red-400 transition-all rounded"
+                            title="Удалить"
+                        >
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        // --- Actions ---
+        function switchProject(id) {
+            activeProjectId = id;
+            saveData();
+        }
+
+        addProjectBtn.addEventListener('click', () => {
+            const name = prompt('Введите название нового проекта:');
+            if (name && name.trim()) {
+                const newProj = {
+                    id: 'proj_' + Date.now(),
+                    name: name.trim(),
+                    months: [{
+                        id: 'm_' + Date.now(),
+                        title: 'Октябрь 2026',
+                        isOpen: true,
+                        items: []
+                    }]
+                };
+                projects.push(newProj);
+                activeProjectId = newProj.id;
+                saveData();
+            }
+        });
+
+        deleteProjectBtn.addEventListener('click', () => {
+            if (projects.length <= 1) {
+                alert('Нельзя удалить единственный проект.');
+                return;
+            }
+            if (confirm('Вы уверены, что хотите удалить этот проект со всеми отчетами?')) {
+                projects = projects.filter(p => p.id !== activeProjectId);
+                activeProjectId = projects[0].id;
+                saveData();
+            }
+        });
+
+        addMonthBtn.addEventListener('click', () => {
+            const title = prompt('Введите название месяца (например: Ноябрь 2026):');
+            if (title && title.trim()) {
+                const proj = getActiveProject();
+                proj.months.unshift({
+                    id: 'm_' + Date.now(),
+                    title: title.trim(),
+                    isOpen: true,
+                    items: []
+                });
+                saveData();
+            }
+        });
+
+        function toggleMonth(monthId) {
+            const proj = getActiveProject();
+            const month = proj.months.find(m => m.id === monthId);
+            if (month) {
+                month.isOpen = !month.isOpen;
+                saveData();
+            }
+        }
+
+        function deleteMonth(monthId) {
+            if (confirm('Удалить весь месяц и все ролики в нем?')) {
+                const proj = getActiveProject();
+                proj.months = proj.months.filter(m => m.id !== monthId);
+                saveData();
+            }
+        }
+
+        function addVideo(monthId) {
+            const proj = getActiveProject();
+            const month = proj.months.find(m => m.id === monthId);
+            if (month) {
+                month.items.push({
+                    id: 'item_' + Date.now(),
+                    title: 'Новый ролик',
+                    tag: '#рилс',
+                    status: 'plan',
+                    date: new Date().toISOString().split('T')[0],
+                    link: '',
+                    image: ''
+                });
+                saveData();
+            }
+        }
+
+        function updateItem(monthId, itemId, key, value) {
+            const proj = getActiveProject();
+            const month = proj.months.find(m => m.id === monthId);
+            if (month) {
+                const item = month.items.find(i => i.id === itemId);
+                if (item) {
+                    item[key] = value;
+                    saveData();
+                }
+            }
+        }
+
+        function deleteVideo(monthId, itemId) {
+            const proj = getActiveProject();
+            const month = proj.months.find(m => m.id === monthId);
+            if (month) {
+                month.items = month.items.filter(i => i.id !== itemId);
+                saveData();
+            }
+        }
+
+        // --- Image Upload Handling ---
+        function triggerImageUpload(monthId, itemId) {
+            currentUploadTarget = { monthId, itemId };
+            globalFileInput.click();
+        }
+
+        globalFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && currentUploadTarget) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    updateItem(currentUploadTarget.monthId, currentUploadTarget.itemId, 'image', event.target.result);
+                    currentUploadTarget = null;
+                    globalFileInput.value = '';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function escapeHtml(str) {
+            return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        // Initial Load
+        render();
+    </script>
+</body>
+</html>
