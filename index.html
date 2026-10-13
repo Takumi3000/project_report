@@ -34,7 +34,7 @@
 
     <style>
         html, body {
-            overflow-x: hidden;
+            overflow-x: clip;
             width: 100%;
         }
         body {
@@ -453,8 +453,9 @@
 
         function renderMonthSection(month) {
             return `
-                <div class="print-card bg-zinc-900/60 border border-zinc-800/80 rounded-2xl overflow-hidden transition-all shadow-sm">
-                    <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-zinc-900/90 flex items-center justify-between border-b border-zinc-800/60 select-none gap-2">
+                <div class="print-card bg-zinc-900/60 border border-zinc-800/80 rounded-2xl transition-all shadow-sm">
+                    <!-- Sticky Month Header -->
+                    <div class="sticky top-[52px] sm:top-[57px] z-20 rounded-t-2xl px-4 sm:px-6 py-3.5 sm:py-4 bg-zinc-900/95 backdrop-blur-md flex items-center justify-between border-b border-zinc-800/60 select-none gap-2">
                         <div class="flex items-center gap-2.5 cursor-pointer min-w-0" onclick="window.toggleMonth('${month.id}')">
                             <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-400 shrink-0 transition-transform ${month.isOpen ? '' : '-rotate-90'}"></i>
                             <h3 class="font-semibold text-sm sm:text-base text-zinc-100 truncate">${escapeHtml(month.title)}</h3>
@@ -462,7 +463,6 @@
                         </div>
 
                         <div class="flex items-center gap-1.5 shrink-0 no-print">
-                            <!-- Кнопка сортировки по дате -->
                             <button onclick="window.toggleSortMonth('${month.id}')" class="p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors" title="Сортировка по дате">
                                 <i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i>
                             </button>
@@ -617,7 +617,6 @@
             `;
         }
 
-        // Target Highlight Helper
         window.setActiveTarget = (monthId, itemId) => {
             activeTargetForUpload = { monthId, itemId };
             updateActiveHighlights();
@@ -645,7 +644,6 @@
             });
         }
 
-        // Actions
         window.switchProject = (id) => {
             activeProjectId = String(id);
             saveData();
@@ -705,7 +703,6 @@
             }
         };
 
-        // --- Toggle Sort Order by Date ---
         window.toggleSortMonth = (monthId) => {
             const proj = getActiveProject();
             if (!proj) return;
@@ -779,7 +776,6 @@
             }
         };
 
-        // --- Excel Import Logic ---
         window.openImportModal = (monthId) => {
             activeMonthForImport = monthId;
             importTextarea.value = '';
@@ -854,7 +850,6 @@
             closeImportModal();
         });
 
-        // --- Clipboard / Image Handlers ---
         globalFileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file && activeTargetForUpload) {
