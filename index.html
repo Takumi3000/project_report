@@ -30,7 +30,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#090d16">
-    <link rel="icon" type="image/png" href="./icon.png"">
+    <link rel="icon" type="image/png" href="./icon.png">
 
     <style>
         html, body {
@@ -81,7 +81,7 @@
 </head>
 <body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col pb-24 antialiased selection:bg-blue-500/20">
 
-    <!-- Top Header (Компактный для мобилок) -->
+    <!-- Top Header -->
     <header class="border-b border-zinc-800/80 bg-zinc-900/80 backdrop-blur-md sticky top-0 z-30 no-print">
         <div class="max-w-7xl mx-auto px-3 sm:px-8 py-3 flex items-center justify-between gap-2">
             
@@ -92,9 +92,7 @@
                 <h1 class="text-base sm:text-lg font-bold tracking-tight text-white">T.REPORT</h1>
             </div>
 
-            <!-- Правые элементы (Совмещенные кнопки) -->
             <div class="flex items-center gap-2 shrink-0">
-                <!-- Совмещенная кнопка Облако / Синхронизация -->
                 <button id="openSyncModalBtn" class="flex items-center gap-1.5 text-xs font-medium px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl border border-zinc-800 hover:bg-zinc-800 transition-all text-zinc-300 whitespace-nowrap">
                     <span id="syncBtnContent" class="flex items-center gap-1.5">
                         <i data-lucide="cloud" class="w-3.5 h-3.5 text-zinc-400"></i>
@@ -102,7 +100,6 @@
                     </span>
                 </button>
 
-                <!-- Export PDF (На мобилках только иконка) -->
                 <button onclick="window.print()" class="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs font-medium rounded-xl bg-blue-600 hover:bg-blue-500 text-white transition-colors shadow-lg shadow-blue-500/20">
                     <i data-lucide="printer" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
                     <span class="hidden sm:inline">Экспорт в PDF</span>
@@ -139,11 +136,9 @@
 
     </main>
 
-    <!-- Bottom Fixed Sheets Panel (Жестко зафиксирована снизу на мобилках) -->
+    <!-- Bottom Fixed Sheets Panel -->
     <footer class="border-t border-zinc-800/90 bg-zinc-900/95 backdrop-blur-md fixed bottom-0 left-0 right-0 z-40 no-print">
         <div class="max-w-7xl mx-auto px-3 sm:px-8 flex items-center justify-between">
-            
-            <!-- Tabs list -->
             <nav id="projectsTabs" class="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-2.5 max-w-[calc(100%-75px)] sm:max-w-none">
                 <!-- Rendered dynamically -->
             </nav>
@@ -158,19 +153,41 @@
     <!-- Sync Modal -->
     <div id="syncModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200 no-print">
         <div class="bg-zinc-900 border border-zinc-800 w-full max-w-md rounded-2xl p-6 shadow-2xl relative space-y-5">
-            
             <div class="flex justify-between items-center">
                 <h3 class="text-base font-semibold text-zinc-100">Облачная Синхронизация</h3>
                 <button id="closeSyncModalBtn" class="text-zinc-400 hover:text-zinc-200">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
+            <div id="syncModalBody" class="space-y-4"></div>
+        </div>
+    </div>
 
-            <!-- Динамический блок модалки -->
-            <div id="syncModalBody" class="space-y-4">
-                <!-- Заполняется из JS -->
+    <!-- Excel Import Modal -->
+    <div id="importModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200 no-print">
+        <div class="bg-zinc-900 border border-zinc-800 w-full max-w-lg rounded-2xl p-6 shadow-2xl relative space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="text-base font-semibold text-zinc-100">Импорт из Excel / Таблиц</h3>
+                <button id="closeImportModalBtn" class="text-zinc-400 hover:text-zinc-200">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
             </div>
 
+            <p class="text-xs text-zinc-400 leading-relaxed">
+                Выдели столбцы с <strong>Названием</strong> и <strong>Датой</strong> в Excel, скопируй (<kbd class="px-1 py-0.5 rounded bg-zinc-800 text-zinc-300">Ctrl+C</kbd>) и вставь сюда:
+            </p>
+
+            <textarea 
+                id="importTextarea" 
+                rows="6" 
+                placeholder="Жанара и Думанаев - Обзор    08.09.2026&#10;Адресов - приглашение    14.09.2026"
+                class="w-full bg-zinc-950 border border-zinc-800 text-xs rounded-xl p-3 outline-none focus:border-blue-500 font-mono text-zinc-200 leading-relaxed"
+            ></textarea>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button id="cancelImportBtn" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-xl text-xs font-medium">Отмена</button>
+                <button id="submitImportBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-medium">Создать ролики</button>
+            </div>
         </div>
     </div>
 
@@ -182,7 +199,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyD9-FySSKcaU-djgAXHmmi7DQoHIHNOY24",
             authDomain: "task-task-70067.firebaseapp.com",
@@ -196,14 +212,13 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // State
         let projects = JSON.parse(localStorage.getItem('media_reports_data')) || [];
         let activeProjectId = localStorage.getItem('media_active_proj') || '';
         let syncCode = localStorage.getItem('minimal_sync_code_reports') || '';
         let unsubscribeFirestore = null;
         let activeTargetForUpload = null;
+        let activeMonthForImport = null;
 
-        // DOM Elements
         const projectsTabs = document.getElementById('projectsTabs');
         const currentProjectTitle = document.getElementById('currentProjectTitle');
         const projectStats = document.getElementById('projectStats');
@@ -213,14 +228,18 @@
         const addMonthBtn = document.getElementById('addMonthBtn');
         const globalFileInput = document.getElementById('globalFileInput');
 
-        // Modal Elements
         const syncModal = document.getElementById('syncModal');
         const openSyncModalBtn = document.getElementById('openSyncModalBtn');
         const closeSyncModalBtn = document.getElementById('closeSyncModalBtn');
         const syncBtnContent = document.getElementById('syncBtnContent');
         const syncModalBody = document.getElementById('syncModalBody');
 
-        // Save & Firestore Sync
+        const importModal = document.getElementById('importModal');
+        const importTextarea = document.getElementById('importTextarea');
+        const closeImportModalBtn = document.getElementById('closeImportModalBtn');
+        const cancelImportBtn = document.getElementById('cancelImportBtn');
+        const submitImportBtn = document.getElementById('submitImportBtn');
+
         async function saveData() {
             localStorage.setItem('media_reports_data', JSON.stringify(projects));
             localStorage.setItem('media_active_proj', activeProjectId);
@@ -356,7 +375,6 @@
             }
         }
 
-        // Render Engine
         function render() {
             if (!projects || projects.length === 0) {
                 currentProjectTitle.textContent = "Нет проектов";
@@ -393,7 +411,6 @@
 
             activeProjectId = activeProj.id;
 
-            // 1. Bottom Tabs
             projectsTabs.innerHTML = projects.map(p => `
                 <button 
                     onclick="window.switchProject('${p.id}')"
@@ -404,7 +421,6 @@
                 </button>
             `).join('');
 
-            // 2. Project Header
             currentProjectTitle.textContent = activeProj.name;
             
             let totalVideos = 0;
@@ -415,7 +431,6 @@
             });
             projectStats.textContent = `Всего видео: ${totalVideos} • Опубликовано: ${publishedVideos} • В процессе: ${totalVideos - publishedVideos}`;
 
-            // 3. Months Accordion
             if (activeProj.months.length === 0) {
                 monthsContainer.innerHTML = `
                     <div class="text-center py-12 border border-dashed border-zinc-800 rounded-2xl">
@@ -432,7 +447,6 @@
         function renderMonthSection(month) {
             return `
                 <div class="print-card bg-zinc-900/60 border border-zinc-800/80 rounded-2xl overflow-hidden transition-all shadow-sm">
-                    <!-- Month Header -->
                     <div class="px-4 sm:px-6 py-3.5 sm:py-4 bg-zinc-900/90 flex items-center justify-between border-b border-zinc-800/60 select-none gap-2">
                         <div class="flex items-center gap-2.5 cursor-pointer min-w-0" onclick="window.toggleMonth('${month.id}')">
                             <i data-lucide="chevron-down" class="w-4 h-4 text-zinc-400 shrink-0 transition-transform ${month.isOpen ? '' : '-rotate-90'}"></i>
@@ -441,9 +455,13 @@
                         </div>
 
                         <div class="flex items-center gap-1.5 shrink-0 no-print">
-                            <button onclick="window.addVideo('${month.id}')" class="px-2.5 py-1.5 sm:px-3.5 sm:py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition-colors flex items-center gap-1">
+                            <button onclick="window.openImportModal('${month.id}')" class="px-2.5 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-colors flex items-center gap-1" title="Импорт из Excel">
+                                <i data-lucide="file-spread-sheet" class="w-3.5 h-3.5 text-emerald-400"></i>
+                                <span class="hidden sm:inline">Импорт</span>
+                            </button>
+                            <button onclick="window.addVideo('${month.id}')" class="px-2.5 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition-colors flex items-center gap-1">
                                 <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                                <span class="hidden sm:inline">Добавить ролик</span>
+                                <span class="hidden sm:inline">Ролик</span>
                             </button>
                             <button onclick="window.deleteMonth('${month.id}')" class="p-1.5 text-zinc-500 hover:text-red-400 transition-colors rounded-lg">
                                 <i data-lucide="trash" class="w-3.5 h-3.5"></i>
@@ -451,7 +469,6 @@
                         </div>
                     </div>
 
-                    <!-- Month Items Table -->
                     <div class="${month.isOpen ? 'block' : 'hidden'} print-accordion-content p-2 sm:p-5">
                         ${month.items.length === 0 ? `
                             <div class="text-center py-6 text-xs text-zinc-500">
@@ -486,10 +503,8 @@
 
             return `
                 <tr class="group hover:bg-zinc-800/30 transition-colors">
-                    <!-- Index -->
                     <td class="py-3 px-2.5 text-zinc-500 font-mono font-medium text-xs sm:text-sm">${index}</td>
 
-                    <!-- Drag & Drop Preview Image (3:4) -->
                     <td class="py-3 px-2.5">
                         <div 
                             tabindex="0"
@@ -513,7 +528,6 @@
                         </div>
                     </td>
 
-                    <!-- Title & Tag -->
                     <td class="py-3 px-2.5">
                         <input 
                             type="text" 
@@ -531,7 +545,6 @@
                         >
                     </td>
 
-                    <!-- Status + Conditional Date -->
                     <td class="py-3 px-2.5">
                         <div class="flex flex-col gap-1.5">
                             <select 
@@ -543,12 +556,10 @@
                                 <option value="published" ${item.status === 'published' ? 'selected' : ''}>🟢 Опубликовано</option>
                             </select>
 
-                            <!-- Print Mode Badge -->
                             <div class="hidden print:block">
                                 ${getStatusBadge(item.status)}
                             </div>
 
-                            <!-- Date (Shows only if Published) -->
                             ${isPublished ? `
                                 <div class="flex items-center gap-1 text-[11px] text-zinc-400 mt-0.5">
                                     <i data-lucide="calendar" class="w-3 h-3 text-emerald-400/80 no-print shrink-0"></i>
@@ -563,7 +574,6 @@
                         </div>
                     </td>
 
-                    <!-- Link -->
                     <td class="py-3 px-2.5 no-print">
                         ${item.link ? `
                             <a href="${escapeHtml(item.link)}" target="_blank" class="inline-flex items-center gap-1 text-blue-400 hover:underline text-[11px] mb-0.5">
@@ -579,7 +589,6 @@
                         >
                     </td>
 
-                    <!-- Delete Action -->
                     <td class="py-3 px-2.5 text-right no-print">
                         <button 
                             onclick="window.deleteVideo('${monthId}', '${item.id}')"
@@ -706,6 +715,83 @@
             }
         };
 
+        // --- Excel Import Logic ---
+        window.openImportModal = (monthId) => {
+            activeMonthForImport = monthId;
+            importTextarea.value = '';
+            importModal.classList.remove('opacity-0', 'pointer-events-none');
+        };
+
+        closeImportModalBtn.addEventListener('click', closeImportModal);
+        cancelImportBtn.addEventListener('click', closeImportModal);
+
+        function closeImportModal() {
+            importModal.classList.add('opacity-0', 'pointer-events-none');
+            activeMonthForImport = null;
+        }
+
+        submitImportBtn.addEventListener('click', () => {
+            const text = importTextarea.value.trim();
+            if (!text || !activeMonthForImport) return;
+
+            const proj = getActiveProject();
+            if (!proj) return;
+
+            const month = proj.months.find(m => String(m.id) === String(activeMonthForImport));
+            if (!month) return;
+
+            const lines = text.split('\n');
+            let addedCount = 0;
+
+            lines.forEach(line => {
+                const parts = line.split('\t').map(p => p.trim()).filter(Boolean);
+                if (parts.length === 0) return;
+
+                let title = '';
+                let rawDate = '';
+
+                // Ищем элемент, похожий на дату
+                const dateIndex = parts.findIndex(p => /\d{1,2}[\.\/-]\d{1,2}[\.\/-]\d{2,4}/.test(p));
+                
+                if (dateIndex !== -1) {
+                    rawDate = parts[dateIndex];
+                    parts.splice(dateIndex, 1);
+                    title = parts.join(' ');
+                } else {
+                    title = parts.join(' ');
+                }
+
+                // Преобразуем DD.MM.YYYY в YYYY-MM-DD
+                let formattedDate = '';
+                if (rawDate) {
+                    const match = rawDate.match(/(\d{1,2})[\.\/-](\d{1,2})[\.\/-](\d{2,4})/);
+                    if (match) {
+                        let day = match[1].padStart(2, '0');
+                        let monthNum = match[2].padStart(2, '0');
+                        let year = match[3];
+                        if (year.length === 2) year = '20' + year;
+                        formattedDate = `${year}-${monthNum}-${day}`;
+                    }
+                }
+
+                month.items.push({
+                    id: 'item_' + (Date.now() + Math.random()),
+                    title: title || 'Ролик',
+                    tag: '#рилс',
+                    status: formattedDate ? 'published' : 'editing',
+                    date: formattedDate,
+                    link: '',
+                    image: ''
+                });
+                addedCount++;
+            });
+
+            if (addedCount > 0) {
+                saveData();
+            }
+            closeImportModal();
+        });
+
         // Drag & Drop + Clipboard Upload
         window.selectTargetForPaste = (monthId, itemId) => {
             activeTargetForUpload = { monthId, itemId };
@@ -771,7 +857,6 @@
             return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         }
 
-        // Modal Handlers
         openSyncModalBtn.addEventListener('click', () => {
             renderSyncModal();
             syncModal.classList.remove('opacity-0', 'pointer-events-none');
@@ -783,7 +868,6 @@
             syncModal.classList.add('opacity-0', 'pointer-events-none');
         }
 
-        // Initialize
         render();
         if (syncCode) {
             subscribeToCloud(syncCode);
