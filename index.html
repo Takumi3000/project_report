@@ -75,7 +75,12 @@
 
         .drag-over {
             border-color: #3b82f6 !important;
-            background-color: rgba(59, 130, 246, 0.15) !important;
+            background-color: rgba(59, 130, 246, 0.25) !important;
+        }
+
+        .active-target {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5) !important;
         }
     </style>
 </head>
@@ -217,6 +222,7 @@
         let syncCode = localStorage.getItem('minimal_sync_code_reports') || '';
         let unsubscribeFirestore = null;
         let activeTargetForUpload = null;
+        let hoveredTargetForUpload = null;
         let activeMonthForImport = null;
 
         const projectsTabs = document.getElementById('projectsTabs');
@@ -441,6 +447,7 @@
                 monthsContainer.innerHTML = activeProj.months.map(m => renderMonthSection(m)).join('');
             }
 
+            updateActiveHighlights();
             lucide.createIcons();
         }
 
@@ -455,6 +462,10 @@
                         </div>
 
                         <div class="flex items-center gap-1.5 shrink-0 no-print">
+                            <!-- Кнопка сортировки по дате -->
+                            <button onclick="window.toggleSortMonth('${month.id}')" class="p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded-lg transition-colors" title="Сортировка по дате">
+                                <i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i>
+                            </button>
                             <button onclick="window.openImportModal('${month.id}')" class="px-2.5 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-colors flex items-center gap-1" title="Импорт из Excel">
                                 <i data-lucide="file-spread-sheet" class="w-3.5 h-3.5 text-emerald-400"></i>
                                 <span class="hidden sm:inline">Импорт</span>
@@ -508,12 +519,16 @@
                     <td class="py-3 px-2.5">
                         <div 
                             tabindex="0"
-                            onclick="window.selectTargetForPaste('${monthId}', '${item.id}')"
+                            data-month-id="${monthId}"
+                            data-item-id="${item.id}"
+                            onclick="window.handlePreviewClick(event, '${monthId}', '${item.id}')"
+                            onfocus="window.setActiveTarget('${monthId}', '${item.id}')"
+                            onmouseenter="window.setHoverTarget('${monthId}', '${item.id}')"
                             ondragover="window.handleDragOver(event)"
                             ondragleave="window.handleDragLeave(event)"
                             ondrop="window.handleDrop(event, '${monthId}', '${item.id}')"
-                            class="preview-dropzone w-14 sm:w-16 aspect-[3/4] rounded-xl border border-zinc-800 bg-zinc-950 flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group/img transition-all hover:border-blue-500/60 outline-none focus:ring-2 focus:ring-blue-500/40 shrink-0"
-                            title="Перетащите фото сюда, кликните или вставьте (Ctrl+V)"
+                            class="preview-dropzone w-14 sm:w-16 aspect-[3/4] rounded-xl border border-zinc-800 bg-zinc-950 flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group/img transition-all hover:border-blue-500/60 outline-none shrink-0"
+                            title="Наведите или кликните для вставки (Ctrl+V) или загрузки"
                         >
                             ${item.image ? `
                                 <img src="${item.image}" class="w-full h-full object-cover">
@@ -602,6 +617,34 @@
             `;
         }
 
+        // Target Highlight Helper
+        window.setActiveTarget = (monthId, itemId) => {
+            activeTargetForUpload = { monthId, itemId };
+            updateActiveHighlights();
+        };
+
+        window.setHoverTarget = (monthId, itemId) => {
+            hoveredTargetForUpload = { monthId, itemId };
+        };
+
+        window.handlePreviewClick = (e, monthId, itemId) => {
+            activeTargetForUpload = { monthId, itemId };
+            updateActiveHighlights();
+            globalFileInput.click();
+        };
+
+        function updateActiveHighlights() {
+            document.querySelectorAll('.preview-dropzone').forEach(el => {
+                const mId = el.getAttribute('data-month-id');
+                const iId = el.getAttribute('data-item-id');
+                if (activeTargetForUpload && String(activeTargetForUpload.monthId) === String(mId) && String(activeTargetForUpload.itemId) === String(iId)) {
+                    el.classList.add('active-target');
+                } else {
+                    el.classList.remove('active-target');
+                }
+            });
+        }
+
         // Actions
         window.switchProject = (id) => {
             activeProjectId = String(id);
@@ -658,6 +701,27 @@
             const month = proj.months.find(m => String(m.id) === String(monthId));
             if (month) {
                 month.isOpen = !month.isOpen;
+                saveData();
+            }
+        };
+
+        // --- Toggle Sort Order by Date ---
+        window.toggleSortMonth = (monthId) => {
+            const proj = getActiveProject();
+            if (!proj) return;
+            const month = proj.months.find(m => String(m.id) === String(monthId));
+            if (month && month.items.length > 1) {
+                month.sortDir = month.sortDir === 'asc' ? 'desc' : 'asc';
+                
+                month.items.sort((a, b) => {
+                    if (!a.date && !b.date) return 0;
+                    if (!a.date) return 1;
+                    if (!b.date) return -1;
+                    return month.sortDir === 'asc' 
+                        ? a.date.localeCompare(b.date) 
+                        : b.date.localeCompare(a.date);
+                });
+                
                 saveData();
             }
         };
@@ -750,7 +814,6 @@
                 let title = '';
                 let rawDate = '';
 
-                // Ищем элемент, похожий на дату
                 const dateIndex = parts.findIndex(p => /\d{1,2}[\.\/-]\d{1,2}[\.\/-]\d{2,4}/.test(p));
                 
                 if (dateIndex !== -1) {
@@ -761,7 +824,6 @@
                     title = parts.join(' ');
                 }
 
-                // Преобразуем DD.MM.YYYY в YYYY-MM-DD
                 let formattedDate = '';
                 if (rawDate) {
                     const match = rawDate.match(/(\d{1,2})[\.\/-](\d{1,2})[\.\/-](\d{2,4})/);
@@ -792,17 +854,7 @@
             closeImportModal();
         });
 
-        // Drag & Drop + Clipboard Upload
-        window.selectTargetForPaste = (monthId, itemId) => {
-            activeTargetForUpload = { monthId, itemId };
-            triggerImageUpload(monthId, itemId);
-        };
-
-        function triggerImageUpload(monthId, itemId) {
-            activeTargetForUpload = { monthId, itemId };
-            globalFileInput.click();
-        }
-
+        // --- Clipboard / Image Handlers ---
         globalFileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file && activeTargetForUpload) {
@@ -829,17 +881,57 @@
         };
 
         window.addEventListener('paste', (e) => {
-            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-            for (let item of items) {
-                if (item.type.indexOf('image') !== -1) {
-                    const file = item.getAsFile();
-                    if (activeTargetForUpload) {
-                        processFile(file, activeTargetForUpload.monthId, activeTargetForUpload.itemId);
-                    } else {
-                        alert('Сначала кликните по блоку превью ролика, куда хотите вставить фото.');
-                    }
-                    break;
+            if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) {
+                return;
+            }
+
+            let target = activeTargetForUpload || hoveredTargetForUpload;
+
+            if (!target && document.activeElement) {
+                const dz = document.activeElement.closest('.preview-dropzone');
+                if (dz) {
+                    target = {
+                        monthId: dz.getAttribute('data-month-id'),
+                        itemId: dz.getAttribute('data-item-id')
+                    };
                 }
+            }
+
+            if (!target) {
+                alert('Сначала кликните по блоку превью ролика (или наведите на него), чтобы вставить фото.');
+                return;
+            }
+
+            const clipboardData = e.clipboardData || window.clipboardData;
+            if (!clipboardData) return;
+
+            let fileToProcess = null;
+
+            if (clipboardData.files && clipboardData.files.length > 0) {
+                for (let i = 0; i < clipboardData.files.length; i++) {
+                    if (clipboardData.files[i].type.startsWith('image/')) {
+                        fileToProcess = clipboardData.files[i];
+                        break;
+                    }
+                }
+            }
+
+            if (!fileToProcess && clipboardData.items) {
+                for (let i = 0; i < clipboardData.items.length; i++) {
+                    const item = clipboardData.items[i];
+                    if (item.type.indexOf('image') !== -1 || (item.kind === 'file' && item.type.startsWith('image/'))) {
+                        const blob = item.getAsFile();
+                        if (blob) {
+                            fileToProcess = blob;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (fileToProcess) {
+                e.preventDefault();
+                processFile(fileToProcess, target.monthId, target.itemId);
             }
         });
 
