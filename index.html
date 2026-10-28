@@ -246,17 +246,99 @@
         const cancelImportBtn = document.getElementById('cancelImportBtn');
         const submitImportBtn = document.getElementById('submitImportBtn');
 
-        async function saveData() {
-            localStorage.setItem('media_reports_data', JSON.stringify(projects));
-            localStorage.setItem('media_active_proj', activeProjectId);
+        let imageCache = {};
+        let saveTimer = null;
+        const IDB_NAME = 'media_reports_img';
+        const IDB_STORE = 'images';
 
-            if (syncCode) {
-                try {
-                    const docRef = doc(db, 'tasks', 'report_' + syncCode);
-                    await setDoc(docRef, { projects: projects, updatedAt: Date.now() }, { merge: true });
-                } catch (err) {
-                    console.error("Ошибка сохранения в Firestore:", err);
+        function openImgDB() {
+            return new Promise((res, rej) => {
+                const r = indexedDB.open(IDB_NAME, 1);
+                r.onupgradeneeded = () => r.result.createObjectStore(IDB_STORE);
+                r.onsuccess = () => res(r.result);
+                r.onerror = () => rej(r.error);
+            });
+        }
+
+        async function idbPut(key, val) {
+            const db = await openImgDB();
+            return new Promise((res, rej) => {
+                const t = db.transaction(IDB_STORE, 'readwrite');
+                t.objectStore(IDB_STORE).put(val, key);
+                t.oncomplete = () => { db.close(); res(); };
+                t.onerror = () => rej(t.error);
+            });
+        }
+
+        async function idbDel(key) {
+            const db = await openImgDB();
+            return new Promise((res, rej) => {
+                const t = db.transaction(IDB_STORE, 'readwrite');
+                t.objectStore(IDB_STORE).delete(key);
+                t.oncomplete = () => { db.close(); res(); };
+                t.onerror = () => rej(t.error);
+            });
+        }
+
+        function idbAll() {
+            return openImgDB().then(db => new Promise((res, rej) => {
+                const out = {};
+                const req = db.transaction(IDB_STORE).objectStore(IDB_STORE).openCursor();
+                req.onsuccess = () => {
+                    const c = req.result;
+                    if (c) { out[c.key] = c.value; c.continue(); }
+                    else { db.close(); res(out); }
+                };
+                req.onerror = () => rej(req.error);
+            }));
+        }
+
+        // Фото живут только в IndexedDB (по одному на элемент), в projects лежит только флаг hasImg.
+        async function loadImages() {
+            try { imageCache = await idbAll(); } catch (e) { console.error('IDB недоступна:', e); }
+            let migrated = false;
+            projects.forEach(p => p.months.forEach(m => m.items.forEach(it => {
+                if (typeof it.image === 'string' && it.image.startsWith('data:')) {
+                    const key = String(it.id);
+                    imageCache[key] = it.image;
+                    it.hasImg = true;
+                    it.image = '';
+                    migrated = true;
+                    idbPut(key, imageCache[key]).catch(e => console.error(e));
                 }
+            })));
+            if (migrated) {
+                try { localStorage.setItem('media_reports_data', JSON.stringify(projects)); } catch (e) {}
+            }
+        }
+
+        function stripForCloud(p) {
+            return JSON.parse(JSON.stringify(p, (k, v) => (k === 'image' ? undefined : v)));
+        }
+
+        async function pushCloud() {
+            if (!syncCode) return;
+            try {
+                const docRef = doc(db, 'tasks', 'report_' + syncCode);
+                await setDoc(docRef, { projects: stripForCloud(projects), updatedAt: Date.now() }, { merge: true });
+            } catch (err) {
+                console.error("Ошибка сохранения в Firestore:", err);
+            }
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem('media_reports_data', JSON.stringify(projects));
+                localStorage.setItem('media_local_ts', String(Date.now()));
+            } catch (err) {
+                console.error("localStorage переполнен:", err);
+                alert('Не удалось сохранить локально: память браузера заполнена. Экспортируйте данные.');
+            }
+            localStorage.setItem('media_active_proj', activeProjectId);
+            if (syncCode) {
+                // Дебаунс: не больше одной записи в облако за 1.2 с (защита от лимита записей Firestore)
+                clearTimeout(saveTimer);
+                saveTimer = setTimeout(pushCloud, 1200);
             }
             render();
         }
@@ -271,12 +353,19 @@
 
             const docRef = doc(db, 'tasks', 'report_' + code);
             unsubscribeFirestore = onSnapshot(docRef, (docSnap) => {
+                // Локальные незаписанные изменения не должны затираться облаком
+                if (docSnap.metadata.hasPendingWrites) return;
                 if (docSnap.exists() && docSnap.data().projects) {
-                    projects = docSnap.data().projects;
-                    localStorage.setItem('media_reports_data', JSON.stringify(projects));
-                    render();
+                    const cloudTs = docSnap.data().updatedAt || 0;
+                    const localTs = Number(localStorage.getItem('media_local_ts') || 0);
+                    if (cloudTs >= localTs) {
+                        projects = docSnap.data().projects;
+                        localStorage.setItem('media_reports_data', JSON.stringify(projects));
+                        localStorage.setItem('media_local_ts', String(cloudTs));
+                        render();
+                    }
                 } else {
-                    saveData();
+                    pushCloud();
                 }
                 updateSyncButtonUI(code);
             }, (error) => {
@@ -467,7 +556,7 @@
                                 <i data-lucide="arrow-up-down" class="w-3.5 h-3.5"></i>
                             </button>
                             <button onclick="window.openImportModal('${month.id}')" class="px-2.5 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg transition-colors flex items-center gap-1" title="Импорт из Excel">
-                                <i data-lucide="file-spread-sheet" class="w-3.5 h-3.5 text-emerald-400"></i>
+                                <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-400"></i>
                                 <span class="hidden sm:inline">Импорт</span>
                             </button>
                             <button onclick="window.addVideo('${month.id}')" class="px-2.5 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg transition-colors flex items-center gap-1">
@@ -530,8 +619,8 @@
                             class="preview-dropzone w-14 sm:w-16 aspect-[3/4] rounded-xl border border-zinc-800 bg-zinc-950 flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group/img transition-all hover:border-blue-500/60 outline-none shrink-0"
                             title="Наведите или кликните для вставки (Ctrl+V) или загрузки"
                         >
-                            ${item.image ? `
-                                <img src="${item.image}" class="w-full h-full object-cover">
+                            ${(item.hasImg && imageCache[item.id]) ? `
+                                <img src="${imageCache[item.id]}" class="w-full h-full object-cover">
                                 <div class="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 flex flex-col items-center justify-center gap-1 transition-opacity no-print text-[9px] text-zinc-200">
                                     <i data-lucide="upload" class="w-3.5 h-3.5"></i>
                                     <span>Заменить</span>
@@ -771,7 +860,7 @@
             if (!proj) return;
             const month = proj.months.find(m => String(m.id) === String(monthId));
             if (month) {
-                month.items = month.items.filter(i => String(i.id) !== String(itemId));
+                month.items = month.items.filter(i => String(i.id) !== String(itemId)); idbDel(String(itemId)).catch(() => {}); delete imageCache[String(itemId)];
                 saveData();
             }
         };
@@ -930,14 +1019,40 @@
             }
         });
 
+        function compressImage(file) {
+            return new Promise((resolve, reject) => {
+                const url = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = () => {
+                    const max = 1000;
+                    const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+                    const w = Math.round(img.naturalWidth * k), h = Math.round(img.naturalHeight * k);
+                    const c = document.createElement('canvas');
+                    c.width = w; c.height = h;
+                    const ctx = c.getContext('2d');
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(0, 0, w, h);
+                    ctx.drawImage(img, 0, 0, w, h);
+                    URL.revokeObjectURL(url);
+                    resolve(c.toDataURL('image/jpeg', 0.82));
+                };
+                img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('файл не распознан как изображение')); };
+                img.src = url;
+            });
+        }
+
         function processFile(file, monthId, itemId) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                updateItem(monthId, itemId, 'image', event.target.result);
+            compressImage(file).then(dataUrl => {
+                const key = String(itemId);
+                imageCache[key] = dataUrl;
+                return idbPut(key, dataUrl).then(() => updateItem(monthId, itemId, 'hasImg', true));
+            }).catch(err => {
+                console.error(err);
+                alert('Не удалось сохранить фото: ' + err.message);
+            }).finally(() => {
                 activeTargetForUpload = null;
                 globalFileInput.value = '';
-            };
-            reader.readAsDataURL(file);
+            });
         }
 
         function escapeHtml(str) {
@@ -954,13 +1069,10 @@
         function closeModal() {
             syncModal.classList.add('opacity-0', 'pointer-events-none');
         }
-
-        render();
-        if (syncCode) {
-            subscribeToCloud(syncCode);
-        } else {
-            updateSyncButtonUI(null);
-        }
+        loadImages().then(() => {
+            render();
+            if (syncCode) { subscribeToCloud(syncCode); } else { updateSyncButtonUI(null); }
+        });
     </script>
 
     <!-- Регистрация SW для PWA -->
